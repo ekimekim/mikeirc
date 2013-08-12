@@ -5,8 +5,16 @@ from geventirc.irc import Client
 import geventirc.handlers as handlers
 from geventirc.message import Join
 
+import gevent
+
+import curses
+from curses.wrapper import wrapper as curses_wrapper
+
 import sys
 from getpass import getpass
+from signal import signal, SIGWINCH
+
+from scrollpad import ScrollPad
 
 
 host = 'chat.freenode.net'
@@ -15,20 +23,45 @@ nick = 'ekimekim'
 real_name = 'Mike Lang'
 channels = ['##ncss_tutors']
 
-NICK_HIGHLIGHT = "31;1"
+scrollpad = None
+
+NICK_HIGHLIGHT = (curses.COLOR_BLACK, curses.COLOR_RED), curses.A_STANDOUT
+NICK_PAIR = 1
 CHAN_WIDTH = 12
 USER_WIDTH = 12
 
+def curses_wraps(fn):
+    """Decorator for curses_wrapper"""
+    return lambda *args, **kwargs: curses_wrapper(fn, *args, **kwargs)
 
 def main(*args):
+	global password
+	password = getpass("Password for {}: ".format(nick))
+	return curses_main(*args)
+
+@curses_wraps
+def curses_main(stdscr, *args):
+	global scrollpad
+
+	curses.curs_set(0) # Cursor invisible
+	if NICK_HIGHLIGHT: curses.init_pair(NICK_PAIR, *NICK_HIGHLIGHT[0])
+
+	height, width = stdscr.getmaxyx()
+	scrollpad = ScrollPad((0,0), (height-1, width))
+
+	curses_winch_handler = None
+	def winch_handler(signum, frame):
+		curses_winch_handler()
+		gevent.spawn(_winch_handler)
+	def _winch_handler():
+		height, width = stdscr.getmaxyx()
+		scrollpad.resize(height-1, width)
+	curses_winch_handler = signal(SIGWINCH, winch_handler)
 
 	client = Client(host, nick, port, real_name=real_name)
 
-	password = getpass("Password for {}: ".format(nick))
 	client.add_handler(RespectfulNickServHandler(nick, password))
-
 	client.add_handler(IdentifiedJoinHandler(channels))
-
 	client.add_handler(generic_recv)
 
 	client.start()
@@ -40,7 +73,6 @@ class IdentifiedJoinHandler(object):
 	def __init__(self, channels):
 		self.channels = channels
 	def __call__(self, client, msg):
-		out("DEBUG: {msg.sender}, {msg.params}".format(msg=msg))
 		if msg.sender == 'NickServ' and msg.params and ' '.join(msg.params[1:]).startswith("You are now identified"):
 			for chan in self.channels:
 				client.send_message(Join(chan))
@@ -79,10 +111,16 @@ def generic_recv(client, msg):
 
 
 def out(s):
-	# highlight nick
-	if NICK_HIGHLIGHT:
-		s = s.replace(nick, "\x1b[{highlight}m{nick}\x1b[m".format(nick=nick, highlight=NICK_HIGHLIGHT))
-	print s
+	s += '\n'
+	if NICK_HIGHLIGHT and nick in s:
+		parts = s.split(nick)
+		scrollpad.addstr(parts[0], refresh=False)
+		for part in parts[1:]:
+			scrollpad.addstr(nick, curses.color_pair(NICK_PAIR) | NICK_HIGHLIGHT[1], refresh=False)
+			scrollpad.addstr(part, refresh=False)
+		scrollpad.refresh()
+	else:
+		scrollpad.addstr(s)
 
 if __name__=='__main__':
 	sys.exit(main(*sys.argv) or 0)
