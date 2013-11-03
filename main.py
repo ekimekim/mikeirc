@@ -40,7 +40,6 @@ class IdentifiedJoinHandler(object):
 	def __init__(self, channels):
 		self.channels = channels
 	def __call__(self, client, msg):
-		out("DEBUG: {msg.sender}, {msg.params}".format(msg=msg))
 		if msg.sender == 'NickServ' and msg.params and ' '.join(msg.params[1:]).startswith("You are now identified"):
 			for chan in self.channels:
 				client.send_message(Join(chan))
