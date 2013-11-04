@@ -6,9 +6,11 @@ import geventirc.handlers as handlers
 from geventirc.message import Join
 
 import gevent
+from gevent.select import select
 
 import curses
 from curses.wrapper import wrapper as curses_wrapper
+from curses.textpad import Textbox
 
 import sys
 from getpass import getpass
@@ -24,6 +26,8 @@ real_name = 'Mike Lang'
 channels = ['#test']
 
 scrollpad = None
+textpad = None
+textwin = None
 
 NICK_HIGHLIGHT = (curses.COLOR_BLACK, curses.COLOR_RED), curses.A_STANDOUT
 NICK_PAIR = 1
@@ -41,13 +45,16 @@ def main(*args):
 
 @curses_wraps
 def curses_main(stdscr, *args):
-	global scrollpad
+	global scrollpad, textpad, textwin
 
 	curses.curs_set(0) # Cursor invisible
 	if NICK_HIGHLIGHT: curses.init_pair(NICK_PAIR, *NICK_HIGHLIGHT[0])
 
 	height, width = stdscr.getmaxyx()
-	scrollpad = ScrollPad((0,0), (height-1, width))
+	scrollpad = ScrollPad((0,0), (height-2, width))
+	textwin = stdscr.subwin(height-1, 0)
+	textwin.refresh()
+	textpad = Textbox(textwin)
 
 	curses_winch_handler = None
 	def winch_handler(signum, frame):
@@ -66,6 +73,7 @@ def curses_main(stdscr, *args):
 	client.add_handler(generic_recv)
 
 	client.start()
+	gevent.spawn(input_handler)
 	client.join()
 
 
@@ -122,6 +130,27 @@ def out(s):
 		scrollpad.refresh()
 	else:
 		scrollpad.addstr(s)
+
+
+def input_handler():
+	while 1:
+		while 1:
+			ch = gevent_getch(sys.stdin.fileno(), textwin)
+			if not ch: 
+				continue
+			if not textpad.do_command(ch):
+				break
+			textwin.refresh()
+		line = textpad.gather()
+		# TODO process line
+
+
+def gevent_getch(fd, scr):
+	r = []
+	while fd not in r:
+		r, w, x = select([fd], [], []) 
+	return scr.getch()
+
 
 if __name__=='__main__':
 	sys.exit(main(*sys.argv) or 0)
