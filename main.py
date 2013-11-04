@@ -27,7 +27,8 @@ def main(*args):
 	password = getpass("Password for {}: ".format(nick))
 	client.add_handler(RespectfulNickServHandler(nick, password))
 
-	client.add_handler(IdentifiedJoinHandler(channels))
+	for channel in channels:
+		client.add_handler(handlers.JoinHandler(channel))
 
 	client.add_handler(generic_recv)
 
