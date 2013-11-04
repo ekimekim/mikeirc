@@ -17,11 +17,11 @@ from signal import signal, SIGWINCH
 from scrollpad import ScrollPad
 
 
-host = 'chat.freenode.net'
+host = 'localhost'
 port = 6667
 nick = 'ekimekim'
 real_name = 'Mike Lang'
-channels = ['##ncss_tutors']
+channels = ['#test']
 
 scrollpad = None
 
