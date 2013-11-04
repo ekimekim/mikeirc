@@ -27,7 +27,7 @@ scrollpad = None
 
 NICK_HIGHLIGHT = (curses.COLOR_BLACK, curses.COLOR_RED), curses.A_STANDOUT
 NICK_PAIR = 1
-CHAN_WIDTH = 12
+SENDER_WIDTH = 12
 USER_WIDTH = 12
 
 def curses_wraps(fn):
@@ -99,7 +99,7 @@ def generic_recv(client, msg):
 			return
 		speaker = msg.params[0]
 		text = ' '.join(msg.params[1:])
-		out("({msg.sender:SENDER_WIDTH}) {speaker:USER_WIDTH}: {text}".format(
+		out("({msg.sender:{SENDER_WIDTH}}) {speaker:{USER_WIDTH}}: {text}".format(
 			msg=msg, speaker=speaker, text=text, **globals()
 		))
 	else:
