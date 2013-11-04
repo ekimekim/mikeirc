@@ -61,7 +61,8 @@ def curses_main(stdscr, *args):
 	client = Client(host, nick, port, real_name=real_name)
 
 	client.add_handler(RespectfulNickServHandler(nick, password))
-	client.add_handler(IdentifiedJoinHandler(channels))
+	for channel in channels:
+		client.add_handler(handlers.JoinHandler(channel))
 	client.add_handler(generic_recv)
 
 	client.start()
