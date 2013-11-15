@@ -74,6 +74,9 @@ def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
 			head += esc_buf
 			esc_buf = ''
 
+	except KeyboardInterrupt:
+		head = tail = ''
+		# fall through
 	except EOFError:
 		if not (head or tail): raise
 		# fall through
@@ -85,11 +88,15 @@ def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
 
 def display(head, tail, output):
 	if not tail: tail = ' '
-	output.write(escapes.SET_CURSOR(1,999))
-	output.write(escapes.CLEAR_LINE)
-	output.write(head)
-	output.write(escapes.INVERTCOLOURS + tail[0] + escapes.UNFORMAT)
-	output.write(tail[1:])
+	output.write(
+		  escapes.SAVE_CURSOR
+		+ escapes.SET_CURSOR(1,999)
+		+ escapes.CLEAR_LINE
+		+ head
+		+ escapes.INVERTCOLOURS + tail[0] + escapes.UNFORMAT
+		+ tail[1:]
+		+ escapes.LOAD_CURSOR
+	)
 
 
 def escape(*matches):
