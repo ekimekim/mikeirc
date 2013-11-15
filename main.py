@@ -8,6 +8,8 @@ from geventirc.message import Join
 import sys
 from getpass import getpass
 
+from gevent.select import select
+
 import editing
 
 
@@ -87,19 +89,19 @@ def out(s):
 	if NICK_HIGHLIGHT:
 		s = s.replace(nick, "\x1b[{highlight}m{nick}\x1b[m".format(nick=nick, highlight=NICK_HIGHLIGHT))
 	print s
-	print
 
 
 def in_worker():
 	fd = sys.stdin.fileno()
-	def read(n):
-		# the n will always be 1
+	def read():
 		r,w,x = select([fd], [], [])
 		assert fd in r
 		return fd.read(1)
 	with editing.get_termattrs(fd):
 		while True:
-			line = editing.readline()
+			print 'test'
+			line = editing.readline(input_fn=read)
+			if line == 'exit': sys.exit() # for testing
 			if line:
 				pass
 				# TODO
