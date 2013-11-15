@@ -31,7 +31,7 @@ def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
 
 			# read input
 			c = input_fn()
-			open('/tmp/log','a').write('{!r}\n'.format(c))
+			#open('/tmp/log','a').write('{!r}\n'.format(c)) # for debug
 			if not c:
 				raise EOFError()
 			if c in TERMINATORS:
@@ -42,8 +42,7 @@ def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
 			if esc_buf in escape_actions:
 				head, tail = escape_actions[esc_buf](head, tail)
 				esc_buf = ''
-				continue
-				
+
 			# on partial escape sequences, continue without action
 			if any(sequence.startswith(esc_buf) for sequence in escape_actions):
 				continue
