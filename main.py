@@ -6,9 +6,11 @@ import geventirc.handlers as handlers
 from geventirc.message import Join
 
 import sys
+import os
 from getpass import getpass
 
 from gevent.select import select
+from gevent.pool import Group
 
 import editing
 
@@ -26,20 +28,26 @@ USER_WIDTH = 12
 
 def main(*args):
 
-	client = Client(host, nick, port, real_name=real_name)
+	workers = Group()
 
-	password = getpass("Password for {}: ".format(nick))
-	client.add_handler(RespectfulNickServHandler(nick, password))
+	try:
+		client = Client(host, nick, port, real_name=real_name)
 
-	for channel in channels:
-		client.add_handler(handlers.JoinHandler(channel))
+		password = getpass("Password for {}: ".format(nick))
+		client.add_handler(RespectfulNickServHandler(nick, password))
 
-	client.add_handler(generic_recv)
+		for channel in channels:
+			client.add_handler(handlers.JoinHandler(channel))
 
-	client.start()
-	gevent.spawn(in_worker)
+		client.add_handler(generic_recv)
 
-	client.join()
+		client.start()
+		workers.spawn(in_worker)
+
+		client.join()
+	except BaseException:
+		group.kill()
+		raise
 
 
 class IdentifiedJoinHandler(object):
@@ -96,7 +104,7 @@ def in_worker():
 	def read():
 		r,w,x = select([fd], [], [])
 		assert fd in r
-		return fd.read(1)
+		return os.read(fd, 1)
 	with editing.get_termattrs(fd):
 		while True:
 			print 'test'
