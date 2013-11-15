@@ -92,3 +92,15 @@ def right(head, tail):
 @escape('\x7f')
 def backspace(head, tail):
 	return head[:-1], tail
+
+@escape('\x1b[3~')
+def delete(head, tail):
+	return head, tail[1:]
+
+@escape('\x1bOH')
+def home(head, tail):
+	return '', head+tail
+
+@escape('\x1bOF')
+def home(head, tail):
+	return head+tail, ''
