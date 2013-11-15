@@ -1,4 +1,5 @@
 import sys
+import string
 
 import escapes
 
@@ -46,6 +47,9 @@ def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
 			# on partial escape sequences, continue without action
 			if any(sequence.startswith(esc_buf) for sequence in escape_actions):
 				continue
+
+			# filter non-printing chars before we add to main buffer
+			esc_buf = filter(lambda c: c in string.printable, esc_buf)
 
 			# flush escape buffer
 			head += esc_buf
