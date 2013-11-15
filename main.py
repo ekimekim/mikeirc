@@ -57,9 +57,13 @@ class RespectfulNickServHandler(handlers.NickServHandler):
 	def __call__(self, client, msg):
 		global nick
 		if msg.command == 'NICK':
-			if msg.params:
-				self.nick = msg.params[-1]
-				out("Warning: Server forced nick change to {!r}".format(nick))
+			try:
+				target, arg = msg.params
+				if target == nick:
+					self.nick = msg.params[-1]
+					out("Warning: Server forced nick change to {!r}".format(nick))
+			except ValueError:
+				pass
 		else:
 			super(RespectfulNickServHandler, self).__call__(client, msg)
 		nick = self.nick
