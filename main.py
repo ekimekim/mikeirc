@@ -8,6 +8,8 @@ from geventirc.message import Join
 import sys
 from getpass import getpass
 
+import editing
+
 
 host = 'irc.desertbus.org'
 port = 6667
