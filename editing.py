@@ -18,7 +18,7 @@ def get_termattrs(fd=0, **kwargs):
 	import termios as t
 	return TermAttrs.modify(
 		(t.IGNPAR|t.ICRNL, 0, 0, 0),
-		(0, t.OPOST, 0, t.ECHO|t.ICANON, t.IEXTEN),
+		(0, t.OPOST, 0, t.ECHO|t.ICANON|t.IEXTEN),
 		fd=fd, **kwargs
 	)
 
