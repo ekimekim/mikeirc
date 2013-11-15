@@ -2,12 +2,25 @@ import sys
 import string
 
 import escapes
+from withtermios import TermAttrs
 
 
 escape_actions = {}
 history = []
 history_pos = 0
 
+def get_termattrs(fd=0, **kwargs):
+	"""Return the TermAttrs object to use. Passes args to term attrs.
+	Note it is a modification of the termios settings at the time of this call.
+	"""
+	# we don't really want full raw mode, just use what's already set with just enough
+	# for what we want
+	import termios as t
+	return TermAttrs.modify(
+		(t.IGNPAR|t.ICRNL, 0, 0, 0),
+		(0, t.OPOST, 0, t.ECHO|t.ICANON, t.IEXTEN),
+		fd=fd, **kwargs
+	)
 
 
 def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
