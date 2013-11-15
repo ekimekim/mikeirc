@@ -79,6 +79,7 @@ def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
 		# fall through
 
 	history[0] = head + tail
+	if not history[0]: history.pop(0)
 	return head + tail
 
 
