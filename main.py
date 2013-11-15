@@ -9,11 +9,11 @@ import sys
 from getpass import getpass
 
 
-host = 'chat.freenode.net'
+host = 'irc.desertbus.org'
 port = 6667
 nick = 'ekimekim'
-real_name = 'Mike Lang'
-channels = ['##ncss_tutors']
+real_name = 'ekimekim'
+channels = ['#desertbus']
 
 NICK_HIGHLIGHT = "31;1"
 CHAN_WIDTH = 12
