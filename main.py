@@ -19,11 +19,14 @@ host = 'irc.desertbus.org'
 port = 6667
 nick = 'ekimekim'
 real_name = 'ekimekim'
-channels = ['#desertbus']
+channel = '#desertbus'
 
 NICK_HIGHLIGHT = "31;1"
+PRIVATE_HIGHLIGHT = "1"
 SENDER_WIDTH = 12
 USER_WIDTH = 12
+
+EXCLUDE_NUMERICS = {5}
 
 
 def main(*args):
@@ -36,8 +39,7 @@ def main(*args):
 		password = getpass("Password for {}: ".format(nick))
 		client.add_handler(RespectfulNickServHandler(nick, password))
 
-		for channel in channels:
-			client.add_handler(handlers.JoinHandler(channel))
+		client.add_handler(handlers.JoinHandler(channel))
 
 		client.add_handler(generic_recv)
 
@@ -46,18 +48,8 @@ def main(*args):
 
 		client.join()
 	except BaseException:
-		group.kill()
+		workers.kill()
 		raise
-
-
-class IdentifiedJoinHandler(object):
-	commands = ['NOTICE']
-	def __init__(self, channels):
-		self.channels = channels
-	def __call__(self, client, msg):
-		if msg.sender == 'NickServ' and msg.params and ' '.join(msg.params[1:]).startswith("You are now identified"):
-			for chan in self.channels:
-				client.send_message(Join(chan))
 
 
 class RespectfulNickServHandler(handlers.NickServHandler):
@@ -78,18 +70,38 @@ def generic_recv(client, msg):
 		if not msg.params:
 			out(msg.encode().rstrip())
 			return
-		speaker = msg.params[0]
+
+		target = msg.params[0]
 		text = ' '.join(msg.params[1:])
-		out("({msg.sender:{SENDER_WIDTH}}) {speaker:{USER_WIDTH}}: {text}".format(
-			msg=msg, speaker=speaker, text=text, **globals()
-		))
+		sender = msg.sender
+		is_action = False
+		for param in msg.ctcp_params:
+			if param and param[0] == 'ACTION':
+				is_action = True
+				text = param[1]
+
+		if target == channel:
+			if is_action:
+				outstr = "{sender:>{SENDER_WIDTH}} {text}"
+			else:
+				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
+		else:
+			# private message
+			sender = "[{}]".format(sender)
+			if target != nick:
+				text = '[{}] {}'.format(target, text)
+			outstr = "\x1b[{PRIVATE_HIGHLIGHT}m{sender:>{SENDER_WIDTH}}\x1b[m: {text}"
+		d = globals().copy()
+		d.update(locals())
+		out(outstr.format(**d))
 	else:
 		try:
-			n = int(msg.command)
+			n = int(msg.command, 10)
 		except ValueError:
-			pass
-		# numeric command - print as is
-		out(msg.encode().rstrip())
+			n = None
+		# numeric command - print as is unless excluded
+		if n not in EXCLUDE_NUMERICS:
+			out(msg.encode().rstrip())
 
 
 def out(s):
@@ -107,7 +119,6 @@ def in_worker():
 		return os.read(fd, 1)
 	with editing.get_termattrs(fd):
 		while True:
-			print 'test'
 			line = editing.readline(input_fn=read)
 			if line == 'exit': sys.exit() # for testing
 			if line:
