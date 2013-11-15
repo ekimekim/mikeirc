@@ -5,6 +5,9 @@ import escapes
 
 
 escape_actions = {}
+history = []
+history_pos = 0
+
 
 
 def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
@@ -23,6 +26,10 @@ def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
 
 	head, tail = '', ''
 	esc_buf = ''
+
+	global history_pos
+	history.insert(0, '')
+	history_pos = 0
 
 	try:
 		while True:
@@ -58,6 +65,7 @@ def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
 		if not (head or tail): raise
 		# fall through
 
+	history[0] = head + tail
 	return head + tail
 
 
@@ -104,3 +112,25 @@ def home(head, tail):
 @escape('\x1bOF')
 def home(head, tail):
 	return head+tail, ''
+
+
+# history
+@escape('\x1b[A')
+def up(head, tail):
+	global history_pos
+	open('/tmp/log', 'a').write('{!r}[{}]\n'.format(history, history_pos))
+	if history_pos >= len(history) - 1:
+		return head, tail
+	if history_pos == 0:
+		history[0] = head + tail
+	history_pos += 1
+	return history[history_pos], ''
+
+@escape('\x1b[B')
+def down(head, tail):
+	global history_pos
+	if history_pos <= 0:
+		return head, tail
+	history_pos -= 1
+	return history[history_pos], ''
+
