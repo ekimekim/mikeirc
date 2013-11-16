@@ -23,6 +23,7 @@ channel = '#desertbus'
 
 NICK_HIGHLIGHT = "31;1"
 PRIVATE_HIGHLIGHT = "1"
+COMMAND_HIGHLIGHT = "30"
 SENDER_WIDTH = 12
 USER_WIDTH = 12
 
@@ -44,7 +45,7 @@ def main(*args):
 		client.add_handler(generic_recv)
 
 		client.start()
-		workers.spawn(in_worker)
+#		workers.spawn(in_worker)
 
 		client.join()
 	except BaseException:
@@ -70,15 +71,21 @@ class RespectfulNickServHandler(handlers.NickServHandler):
 
 
 def generic_recv(client, msg):
+
+	target = msg.params[0]
+	text = ' '.join(msg.params[1:])
+	sender = msg.sender
+	is_action = False
+
+	# default outstr
+	outstr = "\x1b[{COMMAND_HIGHLIGHT}m{sender:>{SENDER_WIDTH}}: {target} {msg.command} {text}\x1b[m"
+
 	if msg.command == 'PRIVMSG':
 		if not msg.params:
+			# bad message
 			out(msg.encode().rstrip())
 			return
 
-		target = msg.params[0]
-		text = ' '.join(msg.params[1:])
-		sender = msg.sender
-		is_action = False
 		for param in msg.ctcp_params:
 			if param and param[0] == 'ACTION':
 				is_action = True
@@ -95,17 +102,27 @@ def generic_recv(client, msg):
 			if target != nick:
 				text = '[{}] {}'.format(target, text)
 			outstr = "\x1b[{PRIVATE_HIGHLIGHT}m{sender:>{SENDER_WIDTH}}\x1b[m: {text}"
-		d = globals().copy()
-		d.update(locals())
-		out(outstr.format(**d))
+	elif msg.command == 'QUIT':
+		outstr = "\x1b[{COMMAND_HIGHLIGHT}m{sender:>{SENDER_WIDTH}} quits: {text}\x1b[m"
+	elif msg.command == 'NICK':
+		outstr = "\x1b[{COMMAND_HIGHLIGHT}m{sender:>{SENDER_WIDTH}} changes their name to {target}\x1b[m"
 	else:
 		try:
 			n = int(msg.command, 10)
 		except ValueError:
-			n = None
-		# numeric command - print as is unless excluded
-		if n not in EXCLUDE_NUMERICS:
-			out(msg.encode().rstrip())
+			# unknown message type
+			pass
+		else:
+			# numeric command - unless excluded, print
+			if n in EXCLUDE_NUMERICS: return
+			if sender == host and target == nick:
+				outstr = "\x1b[{COMMAND_HIGHLIGHT}m{msg.command:>{SENDER_WIDTH}}: {text}"
+			else:
+				# not sure what circumstances this would apply for, use default
+				pass
+	d = globals().copy()
+	d.update(locals())
+	out(outstr.format(**d))
 
 
 def out(s):
