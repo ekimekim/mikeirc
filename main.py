@@ -9,6 +9,7 @@ import sys
 import os
 from getpass import getpass
 import socket
+import re
 
 from gevent.select import select
 from gevent.pool import Group
@@ -131,8 +132,6 @@ class UserListHandler():
 		else:
 			assert False
 #		out("DEBUG: |users| = {}, |ops| = {}".format(len(users),len(ops)))
-		out("DEBUG: users = {}".format(users))
-		out("DEBUG: ops = {}".format(ops))
 
 
 def generic_recv(client, msg):
@@ -208,7 +207,9 @@ def out(s):
 	keywords.update({user: OP_HIGHLIGHT for user in ops})
 	keywords.update(KEYWORD_HIGHLIGHTS)
 	for keyword, highlight in keywords.items():
-		s = s.replace(keyword, "\x1b[{highlight}m{keyword}\x1b[m".format(keyword=keyword, highlight=highlight))
+		s = re.sub('(' + '|'.join(re.escape(keyword) for keyword in keywords) + ')',
+		           "\x1b[{}m\\1\x1b[m".format(highlight),
+		           s, re.I)
 	print s
 
 
