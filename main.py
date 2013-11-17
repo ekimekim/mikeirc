@@ -8,16 +8,18 @@ from geventirc.message import Join
 import sys
 import os
 from getpass import getpass
+import socket
 
 from gevent.select import select
 from gevent.pool import Group
+from gevent.backdoor import BackdoorServer
 
 import editing
 
 
 host = 'irc.desertbus.org'
 port = 6667
-nick = 'ekimekim'
+nick = 'ekimekim_'
 real_name = 'ekimekim'
 channel = '#desertbus'
 
@@ -29,28 +31,51 @@ USER_WIDTH = 12
 
 EXCLUDE_NUMERICS = {5}
 
+main_greenlet = None
+
+
+class ConnClosed(Exception):
+	def __str__(self):
+		return "Connection Closed"
+
 
 def main(*args):
+	global main_greenlet
+
+	password = getpass("Password for {}: ".format(nick))
 
 	workers = Group()
+	main_greenlet = gevent.getcurrent()
 
-	try:
-		client = Client(host, nick, port, real_name=real_name)
+	backdoor = BackdoorServer(('localhost',1666))
+	backdoor.start()
 
-		password = getpass("Password for {}: ".format(nick))
-		client.add_handler(RespectfulNickServHandler(nick, password))
+	while True:
+		try:
+			try:
+				client = Client(host, nick, port, real_name=real_name, disconnect_handler=on_disconnect)
 
-		client.add_handler(handlers.JoinHandler(channel))
+				client.add_handler(handlers.ping_handler, 'PING')
+				client.add_handler(RespectfulNickServHandler(nick, password))
+				client.add_handler(handlers.JoinHandler(channel))
+				client.add_handler(generic_recv)
 
-		client.add_handler(generic_recv)
+				client.start()
+				#workers.spawn(in_worker)
 
-		client.start()
-#		workers.spawn(in_worker)
+				client.join()
+			except BaseException:
+				client.stop()
+				workers.kill()
+				raise
+		except (socket.error, ConnClosed), ex:
+			print ex
+			gevent.sleep(1)
 
-		client.join()
-	except BaseException:
-		workers.kill()
-		raise
+
+def on_disconnect(client):
+	gevent.kill(main_greenlet, ConnClosed())
+	raise gevent.GreenletExit()
 
 
 class RespectfulNickServHandler(handlers.NickServHandler):
