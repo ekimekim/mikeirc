@@ -19,15 +19,24 @@ import editing
 
 host = 'irc.desertbus.org'
 port = 6667
-nick = 'ekimekim_'
+nick = 'ekimekim'
 real_name = 'ekimekim'
 channel = '#desertbus'
 
 NICK_HIGHLIGHT = "31;1"
 PRIVATE_HIGHLIGHT = "1"
 COMMAND_HIGHLIGHT = "30"
+KICK_HIGHLIGHT = "35"
+
 SENDER_WIDTH = 12
 USER_WIDTH = 12
+
+USER_HIGHLIGHTS = {
+	'BidServ': '1;36',
+}
+KEYWORD_HIGHLIGHTS = {
+	nick: NICK_HIGHLIGHT, # original nick always gets highlighted
+}
 
 EXCLUDE_NUMERICS = {5}
 
@@ -102,8 +111,10 @@ def generic_recv(client, msg):
 	sender = msg.sender
 	is_action = False
 
+	highlight = lambda outstr, sequence: '\x1b[{}m{}\x1b[m'.format(sequence, outstr)
+
 	# default outstr
-	outstr = "\x1b[{COMMAND_HIGHLIGHT}m{sender:>{SENDER_WIDTH}}: {target} {msg.command} {text}\x1b[m"
+	outstr = highlight("{sender:>{SENDER_WIDTH}}: {target} {msg.command} {text}", COMMAND_HIGHLIGHT)
 
 	if msg.command == 'PRIVMSG':
 		if not msg.params:
@@ -121,16 +132,24 @@ def generic_recv(client, msg):
 				outstr = "{sender:>{SENDER_WIDTH}} {text}"
 			else:
 				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
+			if sender in USER_HIGHLIGHTS:
+				outstr = highlight(outstr, USER_HIGHLIGHTS[sender])
 		else:
 			# private message
 			sender = "[{}]".format(sender)
 			if target != nick:
 				text = '[{}] {}'.format(target, text)
-			outstr = "\x1b[{PRIVATE_HIGHLIGHT}m{sender:>{SENDER_WIDTH}}\x1b[m: {text}"
+			outstr = highlight("{sender:>{SENDER_WIDTH}}: {text}", PRIVATE_HIGHLIGHT)
 	elif msg.command == 'QUIT':
-		outstr = "\x1b[{COMMAND_HIGHLIGHT}m{sender:>{SENDER_WIDTH}} quits: {text}\x1b[m"
+		outstr = highlight("{sender:>{SENDER_WIDTH}} quits: {text}", COMMAND_HIGHLIGHT)
 	elif msg.command == 'NICK':
-		outstr = "\x1b[{COMMAND_HIGHLIGHT}m{sender:>{SENDER_WIDTH}} changes their name to {target}\x1b[m"
+		outstr = highlight("{sender:>{SENDER_WIDTH}} changes their name to {target}", COMMAND_HIGHLIGHT)
+	elif msg.command == 'KICK':
+		empty = ''
+		target, text = text.split(' ', 1)
+		outstr = highlight("{empty:>{SENDER_WIDTH}} {target} kicked by {sender}: {text}", KICK_HIGHLIGHT)
+	elif msg.command == 'PING':
+		return
 	else:
 		try:
 			n = int(msg.command, 10)
@@ -141,7 +160,7 @@ def generic_recv(client, msg):
 			# numeric command - unless excluded, print
 			if n in EXCLUDE_NUMERICS: return
 			if sender == host and target == nick:
-				outstr = "\x1b[{COMMAND_HIGHLIGHT}m{msg.command:>{SENDER_WIDTH}}: {text}"
+				outstr = highlight("{msg.command:>{SENDER_WIDTH}}: {text}", COMMAND_HIGHLIGHT)
 			else:
 				# not sure what circumstances this would apply for, use default
 				pass
@@ -152,8 +171,10 @@ def generic_recv(client, msg):
 
 def out(s):
 	# highlight nick
-	if NICK_HIGHLIGHT:
-		s = s.replace(nick, "\x1b[{highlight}m{nick}\x1b[m".format(nick=nick, highlight=NICK_HIGHLIGHT))
+	keywords = KEYWORD_HIGHLIGHTS.copy()
+	keywords.update({nick: NICK_HIGHLIGHT})
+	for keyword, highlight in keywords.items():
+		s = s.replace(keyword, "\x1b[{highlight}m{keyword}\x1b[m".format(keyword=keyword, highlight=highlight))
 	print s
 
 
