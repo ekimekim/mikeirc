@@ -39,7 +39,7 @@ SENDER_WIDTH = 12
 USER_WIDTH = 12
 
 USER_HIGHLIGHTS = {
-	'BidServ': '1;36',
+	'BidServ': '1;33',
 }
 KEYWORD_HIGHLIGHTS = {
 	nick: NICK_HIGHLIGHT, # original nick always gets highlighted
