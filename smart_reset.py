@@ -9,12 +9,12 @@ def smart_reset(s):
 	for part in parts[1:]:
 		code, text = part.split('m', 1)
 		if code in ('', '0'):
+			ret += '\x1b[m'
 			if stack:
 				stack.pop()
-				prevcode = stack[-1] if stack else ''
-			else:
-				prevcode = ''
-			ret += '\x1b[' + prevcode + 'm'
+			if stack:
+				prevcode = stack[-1]
+				ret += '\x1b[' + prevcode + 'm'
 		else:
 			stack.append(code)
 			ret += '\x1b[' + code + 'm'
