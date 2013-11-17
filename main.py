@@ -206,11 +206,19 @@ def out(s):
 	keywords.update({user: USER_HIGHLIGHT for user in users})
 	keywords.update({user: OP_HIGHLIGHT for user in ops})
 	keywords.update(KEYWORD_HIGHLIGHTS)
-	for keyword, highlight in keywords.items():
-		s = re.sub('(' + '|'.join(re.escape(keyword) for keyword in keywords) + ')',
-		           "\x1b[{}m\\1\x1b[m".format(highlight),
-		           s, re.I)
-	print s
+	buf = ''
+	s2 = ''
+	for c in s:
+		buf += c
+		if buf in keywords:
+			s2 += '\x1b[{}m{}\x1b[m'.format(keywords[buf], buf)
+			buf = ''
+			continue
+		if not any(keyword.startswith(buf) for keyword in keywords):
+			s2 += buf
+			buf = ''
+	s2 += buf
+	print s2
 
 
 def in_worker():
