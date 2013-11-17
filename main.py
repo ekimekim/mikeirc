@@ -114,7 +114,7 @@ class RespectfulNickServHandler(handlers.NickServHandler):
 
 
 class UserListHandler():
-	commands = ["353", "JOIN", "PART", "QUIT", "MODE"]
+	commands = ["353", "JOIN", "PART", "QUIT", "MODE", "NICK"]
 
 	def __call__(self, client, msg):
 		if msg.command == '353':
@@ -129,6 +129,11 @@ class UserListHandler():
 			if 'o' in flags or 'a' in flags:
 				ops.add(user)
 		elif msg.command in ('PART', 'QUIT'):
+			if msg.sender in users: users.remove(msg.sender)
+			if msg.sender in ops: ops.remove(msg.sender)
+		elif msg.command == 'NICK':
+			users.add(msg.params[0])
+			if msg.sender in ops: ops(msg.params[0])
 			if msg.sender in users: users.remove(msg.sender)
 			if msg.sender in ops: ops.remove(msg.sender)
 		else:
