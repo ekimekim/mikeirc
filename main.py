@@ -17,6 +17,7 @@ from gevent.pool import Group
 from gevent.backdoor import BackdoorServer
 
 import editing
+from smart_reset import smart_reset
 
 
 host = 'irc.desertbus.org'
@@ -207,6 +208,7 @@ def out(s):
 	keywords.update({user: USER_HIGHLIGHT for user in users})
 	keywords.update({user: OP_HIGHLIGHT for user in ops})
 	keywords.update(KEYWORD_HIGHLIGHTS)
+	keywords = {k.lower(): v for k, v in keywords.items()}
 
 	outbuf = ''
 	buf = ''
@@ -215,8 +217,8 @@ def out(s):
 		if c in string.letters + string.digits + '_-' and not in_escape:
 			buf += c
 		else:
-			if buf in keywords and not in_escape:
-				outbuf += '\x1b[{}m{}\x1b[m'.format(keywords[buf], buf)
+			if buf.lower() in keywords and not in_escape:
+				outbuf += '\x1b[{}m{}\x1b[m'.format(keywords[buf.lower()], buf)
 			else:
 				outbuf += buf
 			outbuf += c
@@ -226,7 +228,7 @@ def out(s):
 			if outbuf.endswith('\x1b['):
 				in_escape = True
 	outbuf = outbuf[:-1] # remove terminator
-	print outbuf
+	print smart_reset(outbuf)
 
 
 def in_worker():
