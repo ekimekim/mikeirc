@@ -23,10 +23,15 @@ nick = 'ekimekim'
 real_name = 'ekimekim'
 channel = '#desertbus'
 
-NICK_HIGHLIGHT = "31;1"
-PRIVATE_HIGHLIGHT = "1"
+users = set()
+ops = set()
+
 COMMAND_HIGHLIGHT = "30"
 KICK_HIGHLIGHT = "35"
+PRIVATE_HIGHLIGHT = "1"
+NICK_HIGHLIGHT = "31;1"
+USER_HIGHLIGHT = "32"
+OP_HIGHLIGHT = "33"
 
 SENDER_WIDTH = 12
 USER_WIDTH = 12
@@ -67,6 +72,7 @@ def main(*args):
 				client.add_handler(handlers.ping_handler, 'PING')
 				client.add_handler(RespectfulNickServHandler(nick, password))
 				client.add_handler(handlers.JoinHandler(channel))
+				client.add_handler(UserListHandler())
 				client.add_handler(generic_recv)
 
 				client.start()
@@ -102,6 +108,31 @@ class RespectfulNickServHandler(handlers.NickServHandler):
 		else:
 			super(RespectfulNickServHandler, self).__call__(client, msg)
 		nick = self.nick
+
+
+class UserListHandler():
+	commands = ["353", "JOIN", "PART", "QUIT", "MODE"]
+
+	def __call__(self, client, msg):
+		if msg.command == '353':
+			params = msg.params[2:]
+			users.update(user.lstrip('~+') for user in params)
+			ops.update(user.lstrip('~') for user in params if user.startswith('~'))
+		elif msg.command == 'JOIN':
+			users.add(msg.sender)
+		elif msg.command == 'MODE':
+			flags, user = msg.params[:2]
+			flags.lstrip("+")
+			if 'o' in flags or 'a' in flags:
+				ops.add(user)
+		elif msg.command in ('PART', 'QUIT'):
+			if msg.sender in users: users.remove(msg.sender)
+			if msg.sender in ops: ops.remove(msg.sender)
+		else:
+			assert False
+#		out("DEBUG: |users| = {}, |ops| = {}".format(len(users),len(ops)))
+		out("DEBUG: users = {}".format(users))
+		out("DEBUG: ops = {}".format(ops))
 
 
 def generic_recv(client, msg):
@@ -171,8 +202,11 @@ def generic_recv(client, msg):
 
 def out(s):
 	# highlight nick
-	keywords = KEYWORD_HIGHLIGHTS.copy()
+	keywords = {}
 	keywords.update({nick: NICK_HIGHLIGHT})
+	keywords.update({user: USER_HIGHLIGHT for user in users})
+	keywords.update({user: OP_HIGHLIGHT for user in ops})
+	keywords.update(KEYWORD_HIGHLIGHTS)
 	for keyword, highlight in keywords.items():
 		s = s.replace(keyword, "\x1b[{highlight}m{keyword}\x1b[m".format(keyword=keyword, highlight=highlight))
 	print s
