@@ -10,6 +10,7 @@ import os
 from getpass import getpass
 import socket
 import re
+import string
 
 from gevent.select import select
 from gevent.pool import Group
@@ -206,25 +207,26 @@ def out(s):
 	keywords.update({user: USER_HIGHLIGHT for user in users})
 	keywords.update({user: OP_HIGHLIGHT for user in ops})
 	keywords.update(KEYWORD_HIGHLIGHTS)
+
+	outbuf = ''
 	buf = ''
-	s2 = ''
-	found = ''
-	for c in s:
-		buf += c
-		print repr(s2), repr(buf), repr(found)
-		candidates = [keyword for keyword in keywords if keyword.startswith(found+buf)]
-		if not candidates:
-			if found:
-				s2 += '\x1b[{}m{}\x1b[m'.format(keywords[found], found)
+	in_escape = False
+	for c in s + '\0': # add terminator to ensure final buf contents get flushed
+		if c in string.letters + string.digits + '_-' and not in_escape:
+			buf += c
+		else:
+			if buf in keywords and not in_escape:
+				outbuf += '\x1b[{}m{}\x1b[m'.format(keywords[buf], buf)
 			else:
-				s2 += buf
+				outbuf += buf
+			outbuf += c
+			if in_escape and c == 'm':
+				in_escape = False
 			buf = ''
-			found = ''
-			continue
-		if found+buf in keywords:
-			found = buf
-			buf = ''
-	print s2
+			if outbuf.endswith('\x1b['):
+				in_escape = True
+	outbuf = outbuf[:-1] # remove terminator
+	print outbuf
 
 
 def in_worker():
