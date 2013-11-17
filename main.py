@@ -208,16 +208,22 @@ def out(s):
 	keywords.update(KEYWORD_HIGHLIGHTS)
 	buf = ''
 	s2 = ''
+	found = ''
 	for c in s:
 		buf += c
-		if buf in keywords:
-			s2 += '\x1b[{}m{}\x1b[m'.format(keywords[buf], buf)
+		print repr(s2), repr(buf), repr(found)
+		candidates = [keyword for keyword in keywords if keyword.startswith(found+buf)]
+		if not candidates:
+			if found:
+				s2 += '\x1b[{}m{}\x1b[m'.format(keywords[found], found)
+			else:
+				s2 += buf
 			buf = ''
+			found = ''
 			continue
-		if not any(keyword.startswith(buf) for keyword in keywords):
-			s2 += buf
+		if found+buf in keywords:
+			found = buf
 			buf = ''
-	s2 += buf
 	print s2
 
 
