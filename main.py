@@ -126,7 +126,7 @@ class UserListHandler():
 		elif msg.command == 'MODE':
 			flags, user = msg.params[:2]
 			flags.lstrip("+")
-			if 'o' in flags or 'a' in flags:
+			if any(x in flags for x in 'aoq'):
 				ops.add(user)
 		elif msg.command in ('PART', 'QUIT'):
 			if msg.sender in users: users.remove(msg.sender)
