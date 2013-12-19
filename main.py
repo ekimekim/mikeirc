@@ -124,7 +124,7 @@ class UserListHandler():
 		elif msg.command == 'JOIN':
 			users.add(msg.sender)
 		elif msg.command == 'MODE':
-			flags, user = msg.params[:2]
+			flags, user = msg.params[1:3]
 			flags.lstrip("+")
 			if any(x in flags for x in 'aoq'):
 				ops.add(user)
