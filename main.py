@@ -19,12 +19,9 @@ from gevent.backdoor import BackdoorServer
 import editing
 from smart_reset import smart_reset
 
-
-host = 'irc.desertbus.org'
-port = 6667
-nick = 'ekimekim'
-real_name = 'ekimekim'
-channel = '#desertbus'
+# config file should define these values.
+# channel should have leading #
+from config import host, port, nick, real_name, channel
 
 users = set()
 ops = set()
