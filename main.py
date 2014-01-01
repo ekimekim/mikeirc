@@ -96,6 +96,22 @@ def on_disconnect(client):
 	raise gevent.GreenletExit()
 
 
+normalize_patterns = r"([^|]+)|[^|]*", r"([^\[]+)\[[^\]]*\]"
+normalize_patterns = [re.compile("^{}$".format(pattern)) for pattern in normalize_patterns]
+def nick_normalize(nick):
+	"""Lowercases and looks for forms:
+	NICK|STATUS
+	NICK[STATUS]
+	and strips the STATUS.
+	"""
+	nick = nick.lower()
+	for pattern in normalize_patterns:
+		match = pattern.match(nick)
+		if match:
+			nick, = match.groups()
+	return nick
+
+
 class RespectfulNickServHandler(handlers.NickServHandler):
 	commands = handlers.NickServHandler.commands + ['NICK']
 	def __call__(self, client, msg):
@@ -119,23 +135,29 @@ class UserListHandler():
 	def __call__(self, client, msg):
 		if msg.command == '353':
 			params = msg.params[2:]
-			users.update(user.lstrip('~+') for user in params)
-			ops.update(user.lstrip('~') for user in params if user.startswith('~'))
+			for user in params:
+				user_normalized = nick_normalize(user.lstrip('~+'))
+				users.add(user_normalized)
+				if user.startswith('~'): ops.add(user_normalized)
 		elif msg.command == 'JOIN':
-			users.add(msg.sender)
+			users.add(nick_normalize(msg.sender))
 		elif msg.command == 'MODE':
 			flags, user = msg.params[1:3]
 			flags.lstrip("+")
 			if any(x in flags for x in 'aoq'):
-				ops.add(user)
+				ops.add(nick_normalize(user))
 		elif msg.command in ('PART', 'QUIT'):
-			if msg.sender in users: users.remove(msg.sender)
-			if msg.sender in ops: ops.remove(msg.sender)
+			sender = nick_normalize(msg.sender)
+			if sender in users: users.remove(sender)
+			if sender in ops: ops.remove(sender)
 		elif msg.command == 'NICK':
-			users.add(msg.params[0])
-			if msg.sender in ops: ops(msg.params[0])
-			if msg.sender in users: users.remove(msg.sender)
-			if msg.sender in ops: ops.remove(msg.sender)
+			sender = nick_normalize(msg.sender)
+			new_nick = nick_normalize(msg.params[0])
+			users.add(new_nick)
+			if sender in users: users.remove(sender)
+			if sender in ops:
+				ops.add(new_nick)
+				ops.remove(sender)
 		else:
 			assert False
 #		out("DEBUG: |users| = {}, |ops| = {}".format(len(users),len(ops)))
