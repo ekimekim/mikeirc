@@ -16,12 +16,14 @@ class TermAttrs(object):
 		self.when = when
 
 	@classmethod
-	def modify(cls, include=(0,0,0,0), exclude=(0,0,0,0), fd=None, *args, **kwargs):
+	def modify(cls, include=(0,0,0,0), exclude=(0,0,0,0), ispeed=None, ospeed=None,
+		       cc={}, fd=None, *args, **kwargs):
 		"""Alternate creation function, allowing you to base changes off current term attrs.
 		include and exclude should be 4-tuples of (iflag, oflag, cflag, lflag).
 		All values in include will be set.
 		All values in exclude will be unset.
-		All other values will be unchanged from current values.
+		A dict of { cc_index : cc_value } may be given to make changes to the cc array.
+		All other values will be unchanged from current values unless explicitly given.
 		Other args are passed though to TermAttrs.__init__
 		"""
 		if fd is None: fd = sys.stdin.fileno()
@@ -29,6 +31,10 @@ class TermAttrs(object):
 		for i, e, index in zip(include, exclude, count()):
 			attrs[index] |= i
 			attrs[index] &= ~e
+		if ispeed is not None: attrs[4] = ispeed
+		if ospeed is not None: attrs[5] = ospeed
+		for index, value in cc.items():
+			attrs[6][index] = value
 		return cls(attrs, fd, *args, **kwargs)
 
 	@classmethod
