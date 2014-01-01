@@ -3,6 +3,7 @@ import string
 
 import escapes
 from withtermios import TermAttrs
+from common import instanceclass
 
 
 escape_actions = {}
@@ -21,6 +22,16 @@ def get_termattrs(fd=0, **kwargs):
 		(0, 0, 0, t.ECHO|t.ICANON|t.IEXTEN),
 		fd=fd, **kwargs
 	)
+
+@instanceclass
+class HiddenCursor(object):
+	"""Context manager that hides the cursor.
+	Assumes sys.stdout is a tty.
+	"""
+	def __enter__(self):
+		sys.stdout.write('\x1b[?25l')
+	def __exit__(self, *exc_info):
+		sys.stdout.write('\x1b[?25h')
 
 
 def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
