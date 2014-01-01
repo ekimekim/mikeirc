@@ -72,8 +72,8 @@ def main(*args):
 				client.add_handler(handlers.ping_handler, 'PING')
 				client.add_handler(RespectfulNickServHandler(nick, password))
 				client.add_handler(handlers.JoinHandler(channel))
-				client.add_handler(UserListHandler())
 				client.add_handler(generic_recv)
+				client.add_handler(UserListHandler())
 
 				client.start()
 				#workers.spawn(in_worker)
