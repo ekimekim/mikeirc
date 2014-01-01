@@ -134,6 +134,10 @@ def home(head, tail):
 def home(head, tail):
 	return head+tail, ''
 
+@escape('\04') # ^D
+def eof(head, tail):
+	raise EOFError()
+
 
 # history
 @escape('\x1b[A')
