@@ -18,6 +18,7 @@ from gevent.backdoor import BackdoorServer
 
 import editing
 from smart_reset import smart_reset
+from scriptlib import with_argv
 
 # config file should define these values.
 # channel should have leading #
@@ -53,16 +54,22 @@ class ConnClosed(Exception):
 		return "Connection Closed"
 
 
-def main(*args):
+@with_argv
+def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, backdoor=False):
 	global main_greenlet
 
 	password = getpass("Password for {}: ".format(nick))
+	port = int(port)
 
 	workers = Group()
 	main_greenlet = gevent.getcurrent()
 
-	backdoor = BackdoorServer(('localhost',1666))
-	backdoor.start()
+	if backdoor:
+		backdoor = BackdoorServer(('localhost',1666))
+		backdoor.start()
+
+	# TODO GET RID OF THIS FUCKER
+	globals().update(locals())
 
 	while True:
 		try:
@@ -270,4 +277,4 @@ def in_worker():
 				# TODO
 
 if __name__=='__main__':
-	sys.exit(main(*sys.argv) or 0)
+	main()
