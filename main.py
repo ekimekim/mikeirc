@@ -71,6 +71,7 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 	# TODO GET RID OF THIS FUCKER
 	globals().update(locals())
 
+	client = None
 	while True:
 		try:
 			try:
@@ -87,9 +88,10 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 
 				client.join()
 			except BaseException:
-				client.stop()
+				ex, ex_type, tb = sys.exc_info()
+				if client: client.stop()
 				workers.kill()
-				raise
+				raise ex, ex_type, tb
 		except (socket.error, ConnClosed), ex:
 			print ex
 			gevent.sleep(1)
