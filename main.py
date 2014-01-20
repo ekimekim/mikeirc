@@ -72,6 +72,7 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 	globals().update(locals())
 
 	client = None
+	backoff = Backoff(1, 60, 1.5)
 	while True:
 		try:
 			try:
@@ -86,6 +87,7 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 				client.start()
 				#workers.spawn(in_worker)
 
+				backoff.clear() # successful startup
 				client.join()
 			except BaseException:
 				ex, ex_type, tb = sys.exc_info()
@@ -94,7 +96,23 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 				raise ex, ex_type, tb
 		except (socket.error, ConnClosed), ex:
 			print ex
-			gevent.sleep(1)
+			time = backoff.get()
+			print "retrying in %.2f seconds..." % time
+			gevent.sleep(time)
+
+
+class Backoff(object):
+	def __init__(self, start, limit, rate):
+		self.start = start
+		self.limit = limit
+		self.rate = rate
+		self.clear()
+	def clear(self):
+		self.time = self.start
+	def get(self):
+		time = self.time
+		self.time = min(self.limit, time * self.rate)
+		return time
 
 
 def on_disconnect(client):
