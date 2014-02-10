@@ -1,5 +1,6 @@
 import gevent
 import gevent.select
+from gevent.backdoor import BackdoorServer
 import itertools as it
 
 from withtermios import TermAttrs
@@ -30,5 +31,7 @@ def spam(editor):
 
 editor = LineEditing(input_fn=input_fn)
 gevent.spawn(spam, editor)
+backdoor = BackdoorServer(('localhost', 1666))
+backdoor.start()
 input_loop(editor)
 print
