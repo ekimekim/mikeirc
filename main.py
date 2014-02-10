@@ -22,7 +22,7 @@ from scriptlib import with_argv
 
 # config file should define these values.
 # channel should have leading #
-from config import host, port, nick, real_name, channel
+from config import host, port, nick, real_name, channel, email
 
 users = set()
 ops = set()
@@ -65,7 +65,7 @@ class ConnClosed(Exception):
 
 
 @with_argv
-def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, backdoor=False):
+def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, email=email, backdoor=False):
 	global main_greenlet
 	global client
 
@@ -90,7 +90,7 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 				client = Client(host, nick, port, real_name=real_name, disconnect_handler=on_disconnect)
 
 				client.add_handler(handlers.ping_handler, 'PING')
-				client.add_handler(RespectfulNickServHandler(nick, password))
+				client.add_handler(MyNickServHandler(nick, password, email=email))
 				client.add_handler(handlers.JoinHandler(channel))
 				client.add_handler(generic_recv)
 				client.add_handler(UserListHandler())
@@ -162,6 +162,20 @@ class RespectfulNickServHandler(handlers.NickServHandler):
 		else:
 			super(RespectfulNickServHandler, self).__call__(client, msg)
 		nick = self.nick
+
+class EmailNickServHandler(handlers.NickServHandler):
+	def __init__(self, *args, **kwargs):
+		self.email = kwargs.pop('email', None)
+		super(EmailNickServHandler, self).__init__(*args, **kwargs)
+	def authenticate(self, client):
+		if self.email:
+			auth_msg = 'identify %s %s' % (self.email, self.password)
+		else:
+			auth_msg = 'identify %s' % self.password
+		client.msg('nickserv', auth_msg)
+
+class MyNickServHandler(RespectfulNickServHandler, EmailNickServHandler):
+	pass
 
 
 class UserListHandler():
@@ -297,6 +311,7 @@ def in_worker():
 	fd = sys.stdin.fileno()
 	with editor:
 		try:
+			# TODO echo my own commands
 			while True:
 				line = editor.readline()
 				if line:
