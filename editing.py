@@ -80,6 +80,7 @@ class LineEditing(object):
 			+ tail[1:]
 			+ escapes.LOAD_CURSOR
 		)
+		self.output.flush()
 
 	def readline(self):
 		"""Reads a line of input with line editing.
