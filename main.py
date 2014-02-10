@@ -3,7 +3,7 @@ gevent.monkey.patch_all()
 
 from geventirc.irc import Client
 import geventirc.handlers as handlers
-from geventirc.message import Join, Me, Command
+from geventirc.message import Join, Me, Command, PrivMsg, CTCPMessage
 
 import sys
 import os
@@ -212,11 +212,11 @@ class UserListHandler():
 #		out("DEBUG: |users| = {}, |ops| = {}".format(len(users),len(ops)))
 
 
-def generic_recv(client, msg):
+def generic_recv(client, msg, sender=None):
 
 	target = msg.params[0]
 	text = ' '.join(msg.params[1:])
-	sender = msg.sender
+	if not sender: sender = msg.sender
 	is_action = False
 
 	highlight = lambda outstr, sequence: '\x1b[{}m{}\x1b[m'.format(sequence, outstr)
@@ -230,10 +230,11 @@ def generic_recv(client, msg):
 			out(msg.encode().rstrip())
 			return
 
-		for param in msg.ctcp_params:
-			if param and param[0] == 'ACTION':
-				is_action = True
-				text = param[1]
+		if isinstance(msg, CTCPMessage):
+			for param in msg.ctcp_params:
+				if param and param[0] == 'ACTION':
+					is_action = True
+					text = param[1]
 
 		if target == channel:
 			if is_action:
@@ -315,15 +316,20 @@ def in_worker():
 			while True:
 				line = editor.readline()
 				if line:
+					cmd = None
 					if not line.startswith('/'):
-						client.msg(channel, line)
+						message = PrivMsg(channel, line)
 					else:
 						line = line[1:]
-						cmd, line = line.split(' ', 2)
+						cmd, line = line.split(' ', 1)
 						if cmd == 'me':
-							client.send_message(Me(channel, line))
+							message = Me(channel, line)
 						else:
-							client.send_message(Command(line.split(), command=cmd))
+							message = Command(line.split(), command=cmd)
+					client.send_message(message)
+					generic_recv(client, message, sender=nick)
+					if cmd == 'quit':
+						sys.exit()
 		except EOFError:
 			sys.exit()
 
