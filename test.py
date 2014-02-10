@@ -3,7 +3,7 @@ import gevent.select
 import itertools as it
 
 from withtermios import TermAttrs
-from editing import readline, get_termattrs, HiddenCursor
+from editing import LineEditing
 import escapes
 
 import sys
@@ -13,21 +13,22 @@ def input_fn():
 	assert sys.stdin in r
 	return sys.stdin.read(1)
 
-def input_loop():
-	with get_termattrs(), HiddenCursor:
+def input_loop(editor):
+	with editor:
 		x = ''
 		try:
 			while x != 'exit':
-				x = readline(input_fn=input_fn)
+				x = editor.readline()
 				print repr(x)
 		except EOFError:
 			pass
 
-def spam():
+def spam(editor):
 	for n in it.count():
 		gevent.sleep(1)
-		print escapes.CLEAR_LINE + "Blah blah %d" % n
+		editor.write("Blah blah %d" % n)
 
-gevent.spawn(spam)
-input_loop()
+editor = LineEditing(input_fn=input_fn)
+gevent.spawn(spam, editor)
+input_loop(editor)
 print

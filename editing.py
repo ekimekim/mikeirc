@@ -6,9 +6,6 @@ from withtermios import TermAttrs
 from common import instanceclass
 
 
-escape_actions = {}
-history = []
-history_pos = 0
 
 def get_termattrs(fd=0, **kwargs):
 	"""Return the TermAttrs object to use. Passes args to term attrs.
@@ -34,139 +31,193 @@ class HiddenCursor(object):
 		sys.stdout.write('\x1b[?25h')
 
 
-def readline(file=sys.stdin, input_fn=None, output=sys.stdout):
-	"""Reads a line of input with line editing.
-	Takes either a file, or an input function, which
-	should behave like file.read(1) (ie. no input means closed).
-	It may also raise EOFError directly.
-	Returns after reading a newline, or an EOF.
-	If no text was written and EOF was recieved, raises EOFError,
-	otherwise returns ''.
-	"""
-
-	if not input_fn: input_fn = lambda: file.read(1)
-
+class LineEditing(object):
+	"""Intended to be used as a context manager, this class segments the screen into
+	a display part, and an editing part on the bottom line."""
 	TERMINATORS = {'\r', '\n'}
 
-	head, tail = '', ''
+	CONTEXT_MGRS = [get_termattrs, HiddenCursor]
+	context_mgrs = []
+
+	head = ''
+	tail = ''
 	esc_buf = ''
 
-	global history_pos
-	history.insert(0, '')
+	history = []
 	history_pos = 0
 
-	try:
-		while True:
+	def __init__(self, input_fn=None, input_file=sys.stdin, output=sys.stdout, suppress_nonprinting=True):
+		"""input_fn overrides the default read function. Alternately, input_file specifies a
+		file to read from in the default read function.
+		input_fn should take no args.
+		output is the file to write to, and should be a tty.
+		suppress_nonprinting is default True (set False to disable) and causes any unhandled non-printing characters
+		to not be written to output.
+		"""
+		if input_fn:
+			self.read = input_fn
+		else:
+			self.input_file = input_file
+		self.output = output
+		self.suppress_nonprinting = suppress_nonprinting
+		self.history = self.history[:] # so we have a unique instance to ourselves
 
-			display(head, tail, output)
+	def read(self):
+		"""Read a single character of input, or '' (or EOFError) on EOF.
+		This function is overridable to change the way input is read.
+		"""
+		return self.input_file.read(1)
 
-			# read input
-			c = input_fn()
-			#open('/tmp/log','a').write('{!r}\n'.format(c)) # for debug
-			if not c:
-				raise EOFError()
-			if c in TERMINATORS:
-				break
-			esc_buf += c
+	def refresh(self):
+		"""Display current editing line"""
+		tail = self.tail or ' '
+		self.output.write(
+			  escapes.SAVE_CURSOR
+			+ escapes.SET_CURSOR(1,999)
+			+ escapes.CLEAR_LINE
+			+ self.head
+			+ escapes.INVERTCOLOURS + tail[0] + escapes.UNFORMAT
+			+ tail[1:]
+			+ escapes.LOAD_CURSOR
+		)
 
-			# check for full escape sequence
-			if esc_buf in escape_actions:
-				head, tail = escape_actions[esc_buf](head, tail)
-				esc_buf = ''
+	def readline(self):
+		"""Reads a line of input with line editing.
+		Returns after reading a newline, or an EOF.
+		If no text was written and EOF was recieved, raises EOFError,
+		otherwise returns ''.
+		"""
 
-			# on partial escape sequences, continue without action
-			if any(sequence.startswith(esc_buf) for sequence in escape_actions):
-				continue
+		self.history.insert(0, '')
+		self.history_pos = 0
 
-			# filter non-printing chars before we add to main buffer
-			esc_buf = filter(lambda c: c in string.printable, esc_buf)
+		try:
+			while True:
 
-			# flush escape buffer
-			head += esc_buf
-			esc_buf = ''
+				self.refresh()
 
-	except KeyboardInterrupt:
-		head = tail = ''
-		# fall through
-	except EOFError:
-		if not (head or tail): raise
-		# fall through
+				# read input
+				c = self.read()
+				if not c:
+					raise EOFError()
+				if c in self.TERMINATORS:
+					break
+				self.esc_buf += c
 
-	history[0] = head + tail
-	if not history[0]: history.pop(0)
-	return head + tail
+				# check for full escape sequence
+				if self.esc_buf in ESCAPE_HANDLERS:
+					self.head, self.tail = ESCAPE_HANDLERS[self.esc_buf](self.head, self.tail, self)
+					self.esc_buf = ''
+
+				# on partial escape sequences, continue without action
+				if any(sequence.startswith(self.esc_buf) for sequence in ESCAPE_HANDLERS):
+					continue
+
+				if self.suppress_nonprinting:
+					# filter non-printing chars before we add to main buffer
+					self.esc_buf = filter(lambda c: c in string.printable, self.esc_buf)
+
+				# flush escape buffer
+				self.head += self.esc_buf
+				self.esc_buf = ''
+
+		except KeyboardInterrupt:
+			self.head = ''
+			self.tail = ''
+			# fall through
+		except EOFError:
+			if not (self.head or self.tail): raise
+			# fall through
+
+		self.history[0] = self.head + self.tail
+		if not self.history[0]: self.history.pop(0)
+
+		ret = self.head + self.tail
+		self.head = ''
+		self.tail = ''
+		return ret
+
+	def write(self, s):
+		"""Display a string in the main display section of the screen.
+		This method will automatically append a newline.
+		Due to technical limitations, strings cannot be written without appending a newline.
+		"""
+		self.output.write(escapes.CLEAR_LINE + s + '\n')
+		self.refresh()
+
+	def __enter__(self):
+		if self.context_mgrs:
+			return # allow re-entrance
+		for mgr in self.CONTEXT_MGRS:
+			if callable(mgr): mgr = mgr()
+			self.context_mgrs.append(mgr)
+			mgr.__enter__()
+
+	def __exit__(self, *exc_info):
+		while self.context_mgrs:
+			mgr = self.context_mgrs.pop()
+			mgr.__exit__(*exc_info)
 
 
-def display(head, tail, output):
-	if not tail: tail = ' '
-	output.write(
-		  escapes.SAVE_CURSOR
-		+ escapes.SET_CURSOR(1,999)
-		+ escapes.CLEAR_LINE
-		+ head
-		+ escapes.INVERTCOLOURS + tail[0] + escapes.UNFORMAT
-		+ tail[1:]
-		+ escapes.LOAD_CURSOR
-	)
+# Register escape sequences and handlers
+# Handlers should take (head, tail, obj) and return new (head, tail)
+# obj is provided to allow for more complex actions like mutating the esc_buf or implementing history.
+# TODO come up with a nice way to contain this in the class (this also fixes the obj hack)
 
+ESCAPE_HANDLERS = {}
 
 def escape(*matches):
 	def _escape(fn):
-		global escape_actions
 		for match in matches:
-			escape_actions[match] = fn
+			ESCAPE_HANDLERS[match] = fn
 		return fn
 	return _escape
 
 
 @escape('\x1b[D')
-def left(head, tail):
+def left(head, tail, obj):
 	if not head: return head, tail
 	return head[:-1], head[-1] + tail
 
 @escape('\x1b[C')
-def right(head, tail):
+def right(head, tail, obj):
 	if not tail: return head, tail
 	return head + tail[0], tail[1:]
 
 @escape('\x7f')
-def backspace(head, tail):
+def backspace(head, tail, obj):
 	return head[:-1], tail
 
 @escape('\x1b[3~')
-def delete(head, tail):
+def delete(head, tail, obj):
 	return head, tail[1:]
 
 @escape('\x1bOH')
-def home(head, tail):
+def home(head, tail, obj):
 	return '', head+tail
 
 @escape('\x1bOF')
-def home(head, tail):
+def home(head, tail, obj):
 	return head+tail, ''
 
 @escape('\04') # ^D
-def eof(head, tail):
+def eof(head, tail, obj):
 	raise EOFError()
-
 
 # history
 @escape('\x1b[A')
-def up(head, tail):
-	global history_pos
-	open('/tmp/log', 'a').write('{!r}[{}]\n'.format(history, history_pos))
-	if history_pos >= len(history) - 1:
+def up(head, tail, obj):
+	if obj.history_pos >= len(obj.history) - 1:
 		return head, tail
-	if history_pos == 0:
-		history[0] = head + tail
-	history_pos += 1
-	return history[history_pos], ''
+	if obj.history_pos == 0:
+		obj.history[0] = head + tail
+	obj.history_pos += 1
+	return obj.history[obj.history_pos], ''
 
 @escape('\x1b[B')
-def down(head, tail):
-	global history_pos
-	if history_pos <= 0:
+def down(head, tail, obj):
+	if obj.history_pos <= 0:
 		return head, tail
-	history_pos -= 1
-	return history[history_pos], ''
+	obj.history_pos -= 1
+	return obj.history[obj.history_pos], ''
 
