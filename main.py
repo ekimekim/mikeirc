@@ -16,7 +16,7 @@ from gevent.select import select
 from gevent.pool import Group
 from gevent.backdoor import BackdoorServer
 
-import editing
+from editing import LineEditing
 from smart_reset import smart_reset
 from scriptlib import with_argv
 
@@ -47,6 +47,16 @@ KEYWORD_HIGHLIGHTS = {
 EXCLUDE_NUMERICS = {5}
 
 main_greenlet = None
+
+
+
+def read():
+	import sys
+	fd = sys.stdin.fileno()
+	r,w,x = select([fd], [], [])
+	assert fd in r
+	return os.read(fd, 1)
+editor = LineEditing(input_fn=read)
 
 
 class ConnClosed(Exception):
@@ -85,7 +95,7 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 				client.add_handler(UserListHandler())
 
 				client.start()
-				#workers.spawn(in_worker)
+				workers.spawn(in_worker)
 
 				backoff.clear() # successful startup
 				client.join()
@@ -279,20 +289,17 @@ def out(s):
 			if outbuf.endswith('\x1b['):
 				in_escape = True
 	outbuf = outbuf[:-1] # remove terminator
-	print smart_reset(outbuf)
+	editor.write(smart_reset(outbuf))
 
 
 def in_worker():
 	fd = sys.stdin.fileno()
-	def read():
-		r,w,x = select([fd], [], [])
-		assert fd in r
-		return os.read(fd, 1)
-	with editing.get_termattrs(fd):
+	with editor:
 		while True:
-			line = editing.readline(input_fn=read)
+			line = editor.readline()
 			if line == 'exit': sys.exit() # for testing
 			if line:
+				editor.write("You would have written: %r" % line)
 				pass
 				# TODO
 
