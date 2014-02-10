@@ -3,7 +3,7 @@ gevent.monkey.patch_all()
 
 from geventirc.irc import Client
 import geventirc.handlers as handlers
-from geventirc.message import Join
+from geventirc.message import Join, Me, Command
 
 import sys
 import os
@@ -67,6 +67,7 @@ class ConnClosed(Exception):
 @with_argv
 def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, backdoor=False):
 	global main_greenlet
+	global client
 
 	password = getpass("Password for {}: ".format(nick))
 	port = int(port)
@@ -295,13 +296,21 @@ def out(s):
 def in_worker():
 	fd = sys.stdin.fileno()
 	with editor:
-		while True:
-			line = editor.readline()
-			if line == 'exit': sys.exit() # for testing
-			if line:
-				editor.write("You would have written: %r" % line)
-				pass
-				# TODO
+		try:
+			while True:
+				line = editor.readline()
+				if line:
+					if not line.startswith('/'):
+						client.msg(channel, line)
+					else:
+						line = line[1:]
+						cmd, line = line.split(' ', 2)
+						if cmd == 'me':
+							client.send_message(Me(channel, line))
+						else:
+							client.send_message(Command(line.split(), command=cmd))
+		except EOFError:
+			sys.exit()
 
 if __name__=='__main__':
 	main()
