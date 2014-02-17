@@ -161,7 +161,7 @@ class RespectfulNickServHandler(handlers.NickServHandler):
 				pass
 		else:
 			super(RespectfulNickServHandler, self).__call__(client, msg)
-		nick = self.nick
+		nick = self.current_nick or self.nick
 
 class EmailNickServHandler(handlers.NickServHandler):
 	def __init__(self, *args, **kwargs):
