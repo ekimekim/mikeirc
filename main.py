@@ -312,7 +312,6 @@ def in_worker():
 	fd = sys.stdin.fileno()
 	with editor:
 		try:
-			# TODO echo my own commands
 			while True:
 				line = editor.readline()
 				if line:
