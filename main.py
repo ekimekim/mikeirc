@@ -327,8 +327,12 @@ def in_worker():
 							message = Command(line.split(), command=cmd)
 					client.send_message(message)
 					generic_recv(client, message, sender=nick)
+					# post actions
 					if cmd == 'quit':
 						sys.exit()
+					elif cmd == 'nick' and line:
+						global nick
+						nick = line
 		except EOFError:
 			sys.exit()
 
