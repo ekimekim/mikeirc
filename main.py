@@ -65,7 +65,7 @@ class ConnClosed(Exception):
 
 
 @with_argv
-def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, email=email, backdoor=False):
+def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, email=email, backdoor=False, debug=False):
 	global main_greenlet
 	global client
 
@@ -87,7 +87,7 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 	while True:
 		try:
 			try:
-				client = Client(host, nick, port, real_name=real_name, disconnect_handler=on_disconnect)
+				client = Client(host, nick, port, real_name=real_name, disconnect_handler=on_disconnect, debug=debug)
 
 				client.add_handler(handlers.ping_handler, 'PING')
 				client.add_handler(MyNickServHandler(nick, password, email=email))
