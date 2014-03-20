@@ -317,23 +317,24 @@ def in_worker():
 					if not line.startswith('/'):
 						message = PrivMsg(channel, line)
 					else:
-						line = line[1:].split()
-						cmd = line.pop(0)
+						line = line[1:]
+						args = line.split()
+						cmd = args.pop(0)
 						if not cmd:
 							# "/ TEXT" -> literal privmsg "/TEXT"
-							message = PrivMsg(channel, '/' + ' '.join(line))
+							message = PrivMsg(channel, '/' + line)
 						elif cmd == 'me':
-							message = Me(channel, ' '.join(line))
+							message = Me(channel, line)
 						else:
-							message = Command(line, command=cmd)
+							message = Command(args, command=cmd)
 					client.send_message(message)
 					generic_recv(client, message, sender=nick)
 					# post actions
 					if cmd == 'quit':
 						sys.exit()
-					elif cmd == 'nick' and line:
+					elif cmd == 'nick' and args:
 						global nick
-						nick = line
+						nick = args[0]
 		except EOFError:
 			sys.exit()
 
