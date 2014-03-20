@@ -247,7 +247,10 @@ def generic_recv(client, msg, sender=None):
 			sender = "[{}]".format(sender)
 			if target != nick:
 				text = '[{}] {}'.format(target, text)
-			outstr = highlight("{sender:>{SENDER_WIDTH}}: {text}", PRIVATE_HIGHLIGHT)
+			if is_action:
+				outstr = highlight("{sender:>{SENDER_WIDTH}} {text}", PRIVATE_HIGHLIGHT)
+			else:
+				outstr = highlight("{sender:>{SENDER_WIDTH}}: {text}", PRIVATE_HIGHLIGHT)
 	elif msg.command == 'QUIT':
 		outstr = highlight("{sender:>{SENDER_WIDTH}} quits: {text}", COMMAND_HIGHLIGHT)
 	elif msg.command == 'NICK':
