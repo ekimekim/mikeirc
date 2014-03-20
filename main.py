@@ -325,6 +325,13 @@ def in_worker():
 							message = PrivMsg(channel, '/' + line)
 						elif cmd == 'me':
 							message = Me(channel, line)
+						elif cmd in ('msg', 'memsg'):
+							message_type = Me if cmd == 'memsg' else PrivMsg
+							if not args:
+								# XXX consider displaying an error msg?
+								continue
+							target = args.pop(0)
+							message = message_type(target, ' '.join(args))
 						else:
 							message = Command(args, command=cmd)
 					client.send_message(message)
