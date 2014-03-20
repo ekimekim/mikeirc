@@ -185,9 +185,9 @@ class UserListHandler():
 		if msg.command == '353':
 			params = msg.params[2:]
 			for user in params:
-				user_normalized = nick_normalize(user.lstrip('~+'))
+				user_normalized = nick_normalize(user.lstrip('@~+'))
 				users.add(user_normalized)
-				if user.startswith('~'): ops.add(user_normalized)
+				if user.startswith('@~'): ops.add(user_normalized)
 		elif msg.command == 'JOIN':
 			users.add(nick_normalize(msg.sender))
 		elif msg.command == 'MODE':
