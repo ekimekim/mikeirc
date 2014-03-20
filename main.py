@@ -3,7 +3,7 @@ gevent.monkey.patch_all()
 
 from geventirc.irc import Client
 import geventirc.handlers as handlers
-from geventirc.message import Join, Me, Command, PrivMsg, CTCPMessage
+from geventirc.message import Me, Command, PrivMsg, CTCPMessage
 
 import sys
 import os
@@ -51,7 +51,6 @@ main_greenlet = None
 
 
 def read():
-	import sys
 	fd = sys.stdin.fileno()
 	r,w,x = select([fd], [], [])
 	assert fd in r
@@ -309,7 +308,6 @@ def out(s):
 
 
 def in_worker():
-	fd = sys.stdin.fileno()
 	with editor:
 		try:
 			while True:
