@@ -317,21 +317,21 @@ def in_worker():
 					if not line.startswith('/'):
 						message = PrivMsg(channel, line)
 					else:
-						line = line[1:]
-						args = line.split()
+						args = line[1:].split()
+						line = lambda: ' '.join(args)
 						cmd = args.pop(0)
 						if not cmd:
 							# "/ TEXT" -> literal privmsg "/TEXT"
-							message = PrivMsg(channel, '/' + line)
+							message = PrivMsg(channel, '/' + line())
 						elif cmd == 'me':
-							message = Me(channel, line)
+							message = Me(channel, line())
 						elif cmd in ('msg', 'memsg'):
 							message_type = Me if cmd == 'memsg' else PrivMsg
 							if not args:
 								# XXX consider displaying an error msg?
 								continue
 							target = args.pop(0)
-							message = message_type(target, ' '.join(args))
+							message = message_type(target, line())
 						else:
 							message = Command(args, command=cmd)
 					client.send_message(message)
