@@ -173,6 +173,10 @@ class EmailNickServHandler(handlers.NickServHandler):
 			auth_msg = 'identify %s' % self.password
 		client.msg('nickserv', auth_msg)
 
+class CommandNickServHandler(handlers.NickServHandler):
+	def authenticate(self, client):
+		client.send_message(Command([self.password], command='PASS'))
+
 class MyNickServHandler(RespectfulNickServHandler, EmailNickServHandler):
 	pass
 
