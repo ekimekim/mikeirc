@@ -287,9 +287,9 @@ def generic_recv(client, msg, sender=None):
 def out(s):
 	# highlight nick
 	keywords = {}
-	keywords.update({nick: NICK_HIGHLIGHT})
 	keywords.update({user: USER_HIGHLIGHT for user in users})
 	keywords.update({user: OP_HIGHLIGHT for user in ops})
+	keywords.update({nick: NICK_HIGHLIGHT})
 	keywords.update(KEYWORD_HIGHLIGHTS)
 	keywords = {k.lower(): v for k, v in keywords.items()}
 
