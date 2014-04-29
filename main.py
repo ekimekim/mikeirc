@@ -86,7 +86,7 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 	while True:
 		try:
 			try:
-				client = Client(host, nick, port, real_name=real_name, disconnect_handler=on_disconnect, debug=debug)
+				client = Client(host, nick, port, real_name=real_name, disconnect_handler=on_disconnect)
 
 				client.add_handler(handlers.ping_handler, 'PING')
 				client.add_handler(MyNickServHandler(nick, password, email=email))
