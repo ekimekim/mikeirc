@@ -110,7 +110,9 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 				client.join()
 			except BaseException:
 				ex, ex_type, tb = sys.exc_info()
-				if client: client.stop()
+				if client:
+					try: client.stop()
+					except: pass
 				workers.kill()
 				raise ex, ex_type, tb
 		except (socket.error, ConnClosed), ex:
