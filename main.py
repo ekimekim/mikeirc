@@ -64,7 +64,7 @@ class ConnClosed(Exception):
 
 
 @with_argv
-def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, email=email, backdoor=False, debug=False):
+def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, email=email, backdoor=False, debug=False, twitch=False, quiet=False, no_email=False, no_auth=False):
 	global main_greenlet
 	global client
 
@@ -78,6 +78,12 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 		backdoor = BackdoorServer(('localhost',1666))
 		backdoor.start()
 
+	if twitch:
+		if not isinstance(twitch, basestring):
+			host = 'irc.twitch.tv'
+		else:
+			host = twitch
+
 	# TODO GET RID OF THIS FUCKER
 	globals().update(locals())
 
@@ -86,10 +92,13 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 	while True:
 		try:
 			try:
-				client = Client(host, nick, port, real_name=real_name, disconnect_handler=on_disconnect)
+				client = Client(host, nick, port, real_name=real_name, disconnect_handler=on_disconnect, twitch=twitch, password=password)
 
 				client.add_handler(handlers.ping_handler, 'PING')
-				client.add_handler(MyNickServHandler(nick, password, email=email))
+				if not twitch:
+					handler = get_nick_handler(no_auth=no_auth, with_email=(not no_email))
+					kwargs = dict(email=email) if not (no_email or no_auth) else {}
+					client.add_handler(handler(nick, password, **kwargs))
 				client.add_handler(handlers.JoinHandler(channel))
 				client.add_handler(generic_recv)
 				client.add_handler(UserListHandler())
@@ -177,8 +186,19 @@ class CommandNickServHandler(handlers.NickServHandler):
 	def authenticate(self, client):
 		client.send_message(Command([self.password], command='PASS'))
 
-class MyNickServHandler(RespectfulNickServHandler, EmailNickServHandler):
-	pass
+class NoAuthNickHandler(handlers.NickServHandler):
+	def authenticate(self, client):
+		pass
+
+def get_nick_handler(no_auth=False, with_email=True):
+	handler = handlers.NickServHandler
+	if with_email:
+		handler = EmailNickServHandler
+	if no_auth:
+		handler = NoAuthNickHandler
+	class MyNickServHandler(RespectfulNickServHandler, handler):
+		pass
+	return MyNickServHandler
 
 
 class UserListHandler():
@@ -227,6 +247,8 @@ def generic_recv(client, msg, sender=None):
 	# default outstr
 	outstr = highlight("{sender:>{SENDER_WIDTH}}: {target} {msg.command} {text}", COMMAND_HIGHLIGHT)
 
+	nosend = False
+
 	if msg.command == 'PRIVMSG':
 		if not msg.params:
 			# bad message
@@ -257,8 +279,10 @@ def generic_recv(client, msg, sender=None):
 				outstr = highlight("{sender:>{SENDER_WIDTH}}: {text}", PRIVATE_HIGHLIGHT)
 	elif msg.command == 'QUIT':
 		outstr = highlight("{sender:>{SENDER_WIDTH}} quits: {text}", COMMAND_HIGHLIGHT)
+		if quiet: nosend = True
 	elif msg.command == 'NICK':
 		outstr = highlight("{sender:>{SENDER_WIDTH}} changes their name to {target}", COMMAND_HIGHLIGHT)
+		if quiet: nosend = True
 	elif msg.command == 'KICK':
 		empty = ''
 		target, text = text.split(' ', 1)
@@ -266,6 +290,7 @@ def generic_recv(client, msg, sender=None):
 	elif msg.command == 'PING':
 		return
 	else:
+		if quiet: nosend = True
 		try:
 			n = int(msg.command, 10)
 		except ValueError:
@@ -281,7 +306,8 @@ def generic_recv(client, msg, sender=None):
 				pass
 	d = globals().copy()
 	d.update(locals())
-	out(outstr.format(**d))
+	if not nosend:
+		out(outstr.format(**d))
 
 
 def out(s):
