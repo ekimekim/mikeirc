@@ -116,7 +116,8 @@ class LineEditing(object):
 
 				if self.suppress_nonprinting:
 					# filter non-printing chars before we add to main buffer
-					self.esc_buf = filter(lambda c: c in string.printable, self.esc_buf)
+					# (also allow >128 for non-ascii chars)
+					self.esc_buf = filter(lambda c: c in string.printable or ord(c) > 128, self.esc_buf)
 
 				# flush escape buffer
 				self.head += self.esc_buf
