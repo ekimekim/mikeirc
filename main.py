@@ -64,11 +64,12 @@ class ConnClosed(Exception):
 
 
 @with_argv
-def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, email=email, backdoor=False, debug=False, twitch=False, quiet=False, no_email=False, no_auth=False):
+def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, email=email, backdoor=False, debug=False, twitch=False, quiet=False, no_email=False, no_auth=False, password=None):
 	global main_greenlet
 	global client
 
-	password = getpass("Password for {}: ".format(nick))
+	if password is None:
+		password = getpass("Password for {}: ".format(nick))
 	port = int(port)
 
 	workers = Group()
