@@ -16,7 +16,8 @@ from gevent.select import select
 from gevent.pool import Group
 from gevent.backdoor import BackdoorServer
 
-from editing import LineEditing
+from lineedit import LineEditing
+
 from smart_reset import smart_reset
 from scriptlib import with_argv
 
