@@ -352,6 +352,11 @@ def in_worker():
 				line = editor.readline()
 				if line:
 					cmd = None
+					def process_esc(match):
+						num, = match.groups()
+						return chr(int(num, 16))
+					line = line.replace(r'\\', '\\')
+					line = re.sub(r"\\x([0-9a-fA-F]{2})", process_esc, line)
 					if not line.startswith('/'):
 						message = PrivMsg(channel, line)
 					else:
