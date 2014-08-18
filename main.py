@@ -89,7 +89,7 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 	globals().update(locals())
 
 	client = None
-	backoff = Backoff(1, 60, 1.5)
+	backoff = Backoff(1, 5, 1.5)
 	while True:
 		try:
 			try:
