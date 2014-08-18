@@ -217,6 +217,8 @@ class UserListHandler():
 		elif msg.command == 'JOIN':
 			users.add(nick_normalize(msg.sender))
 		elif msg.command == 'MODE':
+			if len(msg.params) < 3:
+				return
 			flags, user = msg.params[1:3]
 			flags.lstrip("+")
 			if any(x in flags for x in 'aoq'):
