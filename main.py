@@ -47,6 +47,8 @@ KEYWORD_HIGHLIGHTS = {
 
 EXCLUDE_NUMERICS = {5}
 
+IGNORE_NICKS = {"fbt"}
+
 main_greenlet = None
 
 
@@ -243,19 +245,24 @@ class UserListHandler():
 
 def generic_recv(client, msg, sender=None):
 
-	target = msg.params[0]
-	text = ' '.join(msg.params[1:])
+	params = msg.params
+	text = ' '.join(msg.params)
 	if not sender: sender = msg.sender
 	is_action = False
+
+	if sender in IGNORE_NICKS:
+		return
 
 	highlight = lambda outstr, sequence: '\x1b[{}m{}\x1b[m'.format(sequence, outstr)
 
 	# default outstr
-	outstr = highlight("{sender:>{SENDER_WIDTH}}: {target} {msg.command} {text}", COMMAND_HIGHLIGHT)
+	outstr = highlight("{sender:>{SENDER_WIDTH}}: {msg.command} {text}", COMMAND_HIGHLIGHT)
 
 	nosend = False
 
 	if msg.command == 'PRIVMSG':
+		target, text = params[0], ' '.join(params[1:])
+
 		if not msg.params:
 			# bad message
 			out(msg.encode().rstrip())
@@ -287,11 +294,12 @@ def generic_recv(client, msg, sender=None):
 		outstr = highlight("{sender:>{SENDER_WIDTH}} quits: {text}", COMMAND_HIGHLIGHT)
 		if quiet: nosend = True
 	elif msg.command == 'NICK':
+		target, text = params[0], ' '.join(params[1:])
 		outstr = highlight("{sender:>{SENDER_WIDTH}} changes their name to {target}", COMMAND_HIGHLIGHT)
 		if quiet: nosend = True
 	elif msg.command == 'KICK':
+		chan, target, text = params[0], params[1], ' '.join(params[2:])
 		empty = ''
-		target, text = text.split(' ', 1)
 		outstr = highlight("{empty:>{SENDER_WIDTH}} {target} kicked by {sender}: {text}", KICK_HIGHLIGHT)
 	elif msg.command == 'PING':
 		return
@@ -305,7 +313,7 @@ def generic_recv(client, msg, sender=None):
 		else:
 			# numeric command - unless excluded, print
 			if n in EXCLUDE_NUMERICS: return
-			if sender == host and target == nick:
+			if sender == host and params and params[0] == nick:
 				outstr = highlight("{msg.command:>{SENDER_WIDTH}}: {text}", COMMAND_HIGHLIGHT)
 			else:
 				# not sure what circumstances this would apply for, use default
@@ -376,10 +384,15 @@ def in_worker():
 								continue
 							target = args.pop(0)
 							message = message_type(target, line())
+						elif cmd == 'localexec':
+							scope = {}
+							exec line() in globals(), scope
+							message = scope.get('message', None)
 						else:
 							message = Command(args, command=cmd)
-					client.send_message(message)
-					generic_recv(client, message, sender=nick)
+					if message:
+						client.send_message(message)
+						generic_recv(client, message, sender=nick)
 					# post actions
 					if cmd == 'quit':
 						sys.exit()
