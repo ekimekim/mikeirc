@@ -109,6 +109,7 @@ def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, 
 
 				client.start()
 				workers.spawn(in_worker)
+				workers.spawn(pinger)
 
 				backoff.clear() # successful startup
 				client.join()
@@ -401,6 +402,13 @@ def in_worker():
 						nick = args[0]
 		except EOFError:
 			sys.exit()
+
+def pinger():
+	"""We don't even care about getting a response, just make sure we're constantly writing to the socket,
+	otherwise we may not notice if it dies."""
+	while True:
+		gevent.sleep(60)
+		client.send_message(Command(["autoping"], command='PING'))
 
 if __name__=='__main__':
 	main()
