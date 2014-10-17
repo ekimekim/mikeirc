@@ -17,16 +17,14 @@ from gevent.pool import Group
 from gevent.backdoor import BackdoorServer
 
 from lineedit import LineEditing
+from pyconfig import Config
 
 from smart_reset import smart_reset
 from scriptlib import with_argv
 
-# config file should define these values.
-# channel should have leading #
-from config import host, port, nick, real_name, channel, email
-
 users = set()
 ops = set()
+
 
 COMMAND_HIGHLIGHT = "30"
 KICK_HIGHLIGHT = "35"
@@ -42,7 +40,7 @@ USER_HIGHLIGHTS = {
 	'BidServ': '1;33',
 }
 KEYWORD_HIGHLIGHTS = {
-	nick: NICK_HIGHLIGHT, # original nick always gets highlighted
+	'ekimekim': NICK_HIGHLIGHT, # original nick always gets highlighted
 }
 
 EXCLUDE_NUMERICS = {5}
@@ -66,13 +64,37 @@ class ConnClosed(Exception):
 		return "Connection Closed"
 
 
-@with_argv
-def main(host=host, port=port, nick=nick, real_name=real_name, channel=channel, email=email, backdoor=False, debug=False, twitch=False, quiet=False, no_email=False, no_auth=False, password=None):
+def main():
+
+	config = Config()
+	# loads from the default config file, then argv and env. setting --conf allows you
+	# to specify a conf file at "argv level" priority, overriding the defaults.
+	config.load_all(file_path=os.path.join(os.path.dirname(__file__), 'config/defaults'))
+
+	# this is horrible
+	# required keys
+	host = config['host']
+	channel = config['channel']
+	nick = config['nick']
+	# optional keys. note that defaults are None (which works as False)
+	port = config.port or 6667
+	real_name = config.real_name or nick
+	email = config.email
+	backdoor = config.backdoor
+	debug = config.debug
+	twitch = config.twitch
+	quiet = config.quiet
+	no_email = (email is None)
+	no_auth = config.no_auth
+	password = config.password
+
 	global main_greenlet
 	global client
 
-	if password is None:
+	if password is None and not no_auth:
 		password = getpass("Password for {}: ".format(nick))
+	if not password:
+		no_auth = True
 	port = int(port)
 
 	workers = Group()
