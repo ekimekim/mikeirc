@@ -69,7 +69,7 @@ def main():
 	config = Config()
 	# loads from the default config file, then argv and env. setting --conf allows you
 	# to specify a conf file at "argv level" priority, overriding the defaults.
-	config.load_all(file_path=os.path.join(os.path.dirname(__file__), 'config/defaults'))
+	config.load_all(conf_file=os.path.join(os.path.dirname(__file__), 'configs/default'))
 
 	# this is horrible
 	# required keys
