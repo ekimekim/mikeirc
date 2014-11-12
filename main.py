@@ -12,6 +12,8 @@ import socket
 import re
 import string
 
+import requests
+
 from gevent.select import select
 from gevent.pool import Group
 from gevent.backdoor import BackdoorServer
@@ -32,16 +34,19 @@ PRIVATE_HIGHLIGHT = "1"
 NICK_HIGHLIGHT = "31;1"
 USER_HIGHLIGHT = "32"
 OP_HIGHLIGHT = "33"
+TWITCH_EMOTE_HIGHLIGHT = "36"
 
 SENDER_WIDTH = 12
 USER_WIDTH = 12
 
 USER_HIGHLIGHTS = {
 	'BidServ': '1;33',
+	'Bidbot': '1;33',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekimekim': NICK_HIGHLIGHT, # original nick always gets highlighted
 }
+REGEX_HIGHLIGHTS = {}
 
 EXCLUDE_NUMERICS = {5}
 
@@ -109,6 +114,16 @@ def main():
 			host = 'irc.twitch.tv'
 		else:
 			host = twitch
+
+		print "Loading emotes..."
+		emotes = requests.get('https://api.twitch.tv/kraken/chat/emoticons').json()
+		emotes = [x['regex'] for x in emotes['emoticons']]
+		n = len(emotes)
+		emotes = "|".join(["(?:{})".format(x.encode("utf-8")) for x in emotes])
+		emotes = r"\b(?:{})\b".format(emotes)
+		emotes = re.compile(emotes)
+		print "{} emotes loaded".format(n)
+		REGEX_HIGHLIGHTS[emotes] = TWITCH_EMOTE_HIGHLIGHT
 
 	# TODO GET RID OF THIS FUCKER
 	globals().update(locals())
@@ -348,6 +363,14 @@ def generic_recv(client, msg, sender=None):
 
 
 def out(s):
+	# scan for regexes
+	for regex, highlight in REGEX_HIGHLIGHTS.items():
+		if isinstance(regex, basestring):
+			regex = re.compile(regex)
+		def wrap_it(match):
+			return '\x1b[{}m{}\x1b[m'.format(highlight, match.group())
+		s = regex.sub(wrap_it, s)
+
 	# highlight nick
 	keywords = {}
 	keywords.update({user: USER_HIGHLIGHT for user in users})
