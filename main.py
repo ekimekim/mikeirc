@@ -392,7 +392,7 @@ def in_worker():
 					if not line.startswith('/'):
 						message = PrivMsg(channel, line)
 					else:
-						args = line[1:].split()
+						args = line[1:].split(' ')
 						line = lambda: ' '.join(args)
 						cmd = args.pop(0)
 						if not cmd:
