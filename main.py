@@ -42,6 +42,8 @@ USER_WIDTH = 12
 USER_HIGHLIGHTS = {
 	'BidServ': '1;33',
 	'Bidbot': '1;33',
+	'DBEngineering': '31',
+	'DBCommand': '31',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekimekim': NICK_HIGHLIGHT, # original nick always gets highlighted
@@ -114,6 +116,8 @@ def main():
 			host = 'irc.twitch.tv'
 		else:
 			host = twitch
+
+		USER_HIGHLIGHTS[channel] = '31' # channel owner in red
 
 		print "Loading emotes..."
 		emotes = requests.get('https://api.twitch.tv/kraken/chat/emoticons').json()
