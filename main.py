@@ -42,11 +42,11 @@ USER_WIDTH = 12
 USER_HIGHLIGHTS = {
 	'BidServ': '1;33',
 	'Bidbot': '1;33',
-	'DBEngineering': '31',
-	'DBCommand': '31',
+	'DBEngineering': '1',
+	'DBCommand': '1',
 }
 KEYWORD_HIGHLIGHTS = {
-	'ekimekim': NICK_HIGHLIGHT, # original nick always gets highlighted
+	'ekim': NICK_HIGHLIGHT, # das me
 }
 REGEX_HIGHLIGHTS = {}
 
@@ -56,6 +56,8 @@ IGNORE_NICKS = {"fbt"}
 
 main_greenlet = None
 
+
+USER_HIGHLIGHTS = {nick.lower(): highlight for nick, highlight in USER_HIGHLIGHTS.items()}
 
 
 def read():
@@ -117,7 +119,7 @@ def main():
 		else:
 			host = twitch
 
-		USER_HIGHLIGHTS[channel] = '31' # channel owner in red
+		USER_HIGHLIGHTS[channel.lstrip('#')] = '1' # channel owner bold
 
 		print "Loading emotes..."
 		emotes = requests.get('https://api.twitch.tv/kraken/chat/emoticons').json()
@@ -321,7 +323,7 @@ def generic_recv(client, msg, sender=None):
 				outstr = "{sender:>{SENDER_WIDTH}} {text}"
 			else:
 				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
-			if sender in USER_HIGHLIGHTS:
+			if sender.lower() in USER_HIGHLIGHTS:
 				outstr = highlight(outstr, USER_HIGHLIGHTS[sender])
 		else:
 			# private message
