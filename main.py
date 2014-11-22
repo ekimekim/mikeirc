@@ -21,6 +21,7 @@ from gevent.backdoor import BackdoorServer
 from lineedit import LineEditing
 from pyconfig import Config
 
+import irccolors
 from smart_reset import smart_reset
 from scriptlib import with_argv
 
@@ -369,6 +370,10 @@ def generic_recv(client, msg, sender=None):
 
 
 def out(s):
+
+	# irc style characters
+	s = irccolors.apply_irc_formatting(s)
+
 	# scan for regexes
 	for regex, highlight in REGEX_HIGHLIGHTS.items():
 		if isinstance(regex, basestring):
