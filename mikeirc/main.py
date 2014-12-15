@@ -79,7 +79,7 @@ def main():
 	config = Config()
 	# loads from the default config file, then argv and env. setting --conf allows you
 	# to specify a conf file at "argv level" priority, overriding the defaults.
-	config.load_all(conf_file=os.path.join(os.path.dirname(__file__), 'configs/default'))
+	config.load_all(conf_file=os.path.join(os.path.dirname(__file__), '/etc/mikeirc.conf'))
 
 	# this is horrible
 	# required keys
