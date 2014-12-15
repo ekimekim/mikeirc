@@ -1,8 +1,7 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 
-from geventirc.irc import Client
-import geventirc.handlers as handlers
+from geventirc import Client
 from geventirc.message import Me, Command, PrivMsg, CTCPMessage
 
 import sys
@@ -24,9 +23,6 @@ from pyconfig import Config
 import irccolors
 from smart_reset import smart_reset
 from scriptlib import with_argv
-
-users = set()
-ops = set()
 
 
 COMMAND_HIGHLIGHT = "30"
@@ -88,7 +84,7 @@ def main():
 	channel = config['channel']
 	nick = config['nick']
 	# optional keys. note that defaults are None (which works as False)
-	port = config.port or 6667
+	port = int(config.port) or 6667
 	real_name = config.real_name or nick
 	email = config.email
 	backdoor = config.backdoor
@@ -106,14 +102,16 @@ def main():
 		password = getpass("Password for {}: ".format(nick))
 	if not password:
 		no_auth = True
-	port = int(port)
 
 	workers = Group()
 	main_greenlet = gevent.getcurrent()
 
 	if backdoor:
-		backdoor = BackdoorServer(('localhost',1666))
-		backdoor.start()
+		try:
+			backdoor = int(backdoor)
+		except ValueError:
+			backdoor = 1234
+		gtools.backdoor(backdoor)
 
 	if twitch:
 		if not isinstance(twitch, basestring):
@@ -142,16 +140,14 @@ def main():
 			import traceback
 			traceback.print_exc()
 
-	# TODO GET RID OF THIS FUCKER
-	globals().update(locals())
-
 	client = None
 	backoff = Backoff(1, 5, 1.5)
 	while True:
 		try:
 			try:
-				client = Client(host, nick, port, real_name=real_name, disconnect_handler=on_disconnect, twitch=twitch, password=password)
+				client = Client(host, nick, port, real_name=real_name, password=password)
 
+				# TODO UPTO
 				client.add_handler(handlers.ping_handler, 'PING')
 				if not twitch:
 					handler = get_nick_handler(no_auth=no_auth, with_email=(not no_email))
@@ -193,11 +189,6 @@ class Backoff(object):
 		time = self.time
 		self.time = min(self.limit, time * self.rate)
 		return time
-
-
-def on_disconnect(client):
-	gevent.kill(main_greenlet, ConnClosed())
-	raise gevent.GreenletExit()
 
 
 normalize_patterns = r"([^|]+)|[^|]*", r"([^\[]+)\[[^\]]*\]"
@@ -260,42 +251,6 @@ def get_nick_handler(no_auth=False, with_email=True):
 	class MyNickServHandler(RespectfulNickServHandler, handler):
 		pass
 	return MyNickServHandler
-
-
-class UserListHandler():
-	commands = ["353", "JOIN", "PART", "QUIT", "MODE", "NICK"]
-
-	def __call__(self, client, msg):
-		if msg.command == '353':
-			params = msg.params[2:]
-			for user in params:
-				user_normalized = nick_normalize(user.lstrip('@~+'))
-				users.add(user_normalized)
-				if user.startswith('@~&'): ops.add(user_normalized)
-		elif msg.command == 'JOIN':
-			users.add(nick_normalize(msg.sender))
-		elif msg.command == 'MODE':
-			if len(msg.params) < 3:
-				return
-			flags, user = msg.params[1:3]
-			flags.lstrip("+")
-			if any(x in flags for x in 'aoq'):
-				ops.add(nick_normalize(user))
-		elif msg.command in ('PART', 'QUIT'):
-			sender = nick_normalize(msg.sender)
-			if sender in users: users.remove(sender)
-			if sender in ops: ops.remove(sender)
-		elif msg.command == 'NICK':
-			sender = nick_normalize(msg.sender)
-			new_nick = nick_normalize(msg.params[0])
-			users.add(new_nick)
-			if sender in users: users.remove(sender)
-			if sender in ops:
-				ops.add(new_nick)
-				ops.remove(sender)
-		else:
-			assert False
-#		out("DEBUG: |users| = {}, |ops| = {}".format(len(users),len(ops)))
 
 
 def generic_recv(client, msg, sender=None):
