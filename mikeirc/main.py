@@ -419,9 +419,9 @@ def in_worker():
 				if line:
 					cmd = None
 					def process_esc(match):
-						lead, num, = match.groups()
-						return lead + chr(int(num, 16))
-					line = re.sub(r"([^\\]|^)\\x([0-9a-fA-F]{2})", process_esc, line)
+						num, = match.groups()
+						return chr(int(num, 16))
+					line = re.sub(r"(?<!\\)\\x([0-9a-fA-F]{2})", process_esc, line)
 					line = line.replace(r'\\', '\\')
 					if not line.startswith('/'):
 						message = PrivMsg(channel, line)
