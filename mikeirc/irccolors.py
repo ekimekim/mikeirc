@@ -25,7 +25,7 @@ COLOR_MAP = {
 	10: '6', # teal (a green/blue cyan)
 	11: '6', # light cyan (cyan) (aqua)
 	12: '6', # light blue (royal)
-	13: '4', # pink (light purple) (fuchsia)
+	13: '5', # pink (light purple) (fuchsia)
 	14: '0', # grey
 	15: '7', # light grey (silver)
 }
