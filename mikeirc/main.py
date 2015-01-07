@@ -449,6 +449,8 @@ def in_worker():
 							scope = {}
 							exec line() in globals(), scope
 							message = scope.get('message', None)
+						elif cmd == 'sing':
+							message = PrivMsg(channel, "\xe2\x99\xab {} \xe2\x99\xab".format(line()))
 						else:
 							message = Command(args, command=cmd)
 					if message:
