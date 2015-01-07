@@ -117,8 +117,12 @@ def main():
 	if twitch:
 		if not isinstance(twitch, basestring):
 			host = 'irc.twitch.tv'
+		elif twitch == 'event':
+			host = random.choice(TWITCH_EVENT_SERVERS)
+			print 'Using twitch event server:', host
 		else:
 			host = twitch
+			print 'Using custom twitch server:', host
 
 		USER_HIGHLIGHTS[channel.lstrip('#')] = '1' # channel owner bold
 
