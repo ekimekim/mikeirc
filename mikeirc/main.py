@@ -1,28 +1,26 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 
+import os
+import random
+import re
+import string
+import sys
+import traceback
+from getpass import getpass
+
 from geventirc import Client
 from geventirc.message import Me, Command, PrivMsg, CTCPMessage
 
-import sys
-import os
-from getpass import getpass
-import socket
-import re
-import string
-
+import gtools
 import requests
-
+from backoff import Backoff
 from gevent.select import select
-from gevent.pool import Group
-from gevent.backdoor import BackdoorServer
-
 from lineedit import LineEditing
-from pyconfig import Config
+from pyconfig import CONF
 
 import irccolors
 from smart_reset import smart_reset
-from scriptlib import with_argv
 
 
 COMMAND_HIGHLIGHT = "30"
@@ -66,54 +64,41 @@ def read():
 editor = LineEditing(input_fn=read)
 
 
-class ConnClosed(Exception):
-	def __str__(self):
-		return "Connection Closed"
-
-
 def main():
 
-	config = Config()
 	# loads from the default config file, then argv and env. setting --conf allows you
 	# to specify a conf file at "argv level" priority, overriding the defaults.
-	config.load_all(conf_file=os.path.join(os.path.dirname(__file__), '/etc/mikeirc.conf'))
+	CONF.load_all(conf_file=os.path.join(os.path.dirname(__file__), '/etc/mikeirc.conf'))
 
 	# this is horrible
 	# required keys
-	host = config['host']
-	channel = config['channel']
-	nick = config['nick']
+	host = CONF['host']
+	CONF['nick'] # just check it's there
+	CONF['channel']
 	# optional keys. note that defaults are None (which works as False)
-	port = int(config.port) or 6667
-	real_name = config.real_name or nick
-	email = config.email
-	backdoor = config.backdoor
-	debug = config.debug
-	twitch = config.twitch
-	quiet = config.quiet
-	no_email = (email is None)
-	no_auth = config.no_auth
-	password = config.password
+	port = int(CONF.port) or 6667
+	backdoor = CONF.backdoor
+	twitch = CONF.twitch
+	password = CONF.password
 
-	global main_greenlet
-	global client
-
-	if password is None and not no_auth:
-		password = getpass("Password for {}: ".format(nick))
-	if not password:
-		no_auth = True
-
-	workers = Group()
-	main_greenlet = gevent.getcurrent()
+	# resolve password config options to actual password values
+	if password is None and not CONF.no_auth:
+		password = getpass("Password for {}: ".format(CONF.nick))
+	if not password: # password == '' is different to password == None
+		password = None
+	if twitch:
+		nickserv_password = None
+	else:
+		nickserv_password = "{} {}".format(CONF.email, password) if CONF.email else password
+		password = None
 
 	if backdoor:
-		try:
-			backdoor = int(backdoor)
-		except ValueError:
+		if backdoor is True:
 			backdoor = 1234
 		gtools.backdoor(backdoor)
 
 	if twitch:
+		# make changes to host
 		if not isinstance(twitch, basestring):
 			host = 'irc.twitch.tv'
 		elif twitch == 'event':
@@ -123,8 +108,10 @@ def main():
 			host = twitch
 			print 'Using custom twitch server:', host
 
-		USER_HIGHLIGHTS[channel.lstrip('#')] = '1' # channel owner bold
+		# make channel owner bold
+		USER_HIGHLIGHTS[CONF.channel.lstrip('#')] = '1'
 
+		# load emotes
 		try:
 			print "Loading emotes..."
 			emotes = requests.get('https://api.twitch.tv/kraken/chat/emoticons').json()
@@ -141,54 +128,29 @@ def main():
 			traceback.print_exc()
 
 	client = None
-	backoff = Backoff(1, 5, 1.5)
+	backoff = Backoff(0.2, 10, 2)
 	while True:
 		try:
-			try:
-				client = Client(host, nick, port, real_name=real_name, password=password)
+			client = Client(host, CONF.nick, port, real_name=CONF.real_name,
+							password=password, nickserv_password=nickserv_password)
+			channel = client.channel(CONF.channel)
+			channel.join()
 
-				# TODO UPTO
-				client.add_handler(handlers.ping_handler, 'PING')
-				if not twitch:
-					handler = get_nick_handler(no_auth=no_auth, with_email=(not no_email))
-					kwargs = dict(email=email) if not (no_email or no_auth) else {}
-					client.add_handler(handler(nick, password, **kwargs))
-				client.add_handler(handlers.JoinHandler(channel))
-				client.add_handler(generic_recv)
-				client.add_handler(UserListHandler())
+			client.add_handler(generic_recv, command=PrivMsg)
 
-				client.start()
-				workers.spawn(in_worker)
-				workers.spawn(pinger)
+			client.start()
+			# spawn input greenlet in client's Group, linking its lifecycle to the client
+			client._group.spawn(in_worker)
 
-				backoff.clear() # successful startup
-				client.join()
-			except BaseException:
-				ex, ex_type, tb = sys.exc_info()
-				if client:
-					try: client.stop()
-					except: pass
-				workers.kill()
-				raise ex, ex_type, tb
-		except (socket.error, ConnClosed), ex:
-			print ex
+			backoff.reset() # successful startup
+			client.wait_for_stop()
+		except Exception:
+			traceback.print_exc()
 			time = backoff.get()
 			print "retrying in %.2f seconds..." % time
 			gevent.sleep(time)
-
-
-class Backoff(object):
-	def __init__(self, start, limit, rate):
-		self.start = start
-		self.limit = limit
-		self.rate = rate
-		self.clear()
-	def clear(self):
-		self.time = self.start
-	def get(self):
-		time = self.time
-		self.time = min(self.limit, time * self.rate)
-		return time
+		else:
+			break
 
 
 normalize_patterns = r"([^|]+)|[^|]*", r"([^\[]+)\[[^\]]*\]"
@@ -207,58 +169,13 @@ def nick_normalize(nick):
 	return nick
 
 
-class RespectfulNickServHandler(handlers.NickServHandler):
-	commands = handlers.NickServHandler.commands + ['NICK']
-	def __call__(self, client, msg):
-		global nick
-		if msg.command == 'NICK':
-			try:
-				target, arg = msg.params
-				if target == nick:
-					self.nick = msg.params[-1]
-					out("Warning: Server forced nick change to {!r}".format(nick))
-			except ValueError:
-				pass
-		else:
-			super(RespectfulNickServHandler, self).__call__(client, msg)
-		nick = self.current_nick or self.nick
-
-class EmailNickServHandler(handlers.NickServHandler):
-	def __init__(self, *args, **kwargs):
-		self.email = kwargs.pop('email', None)
-		super(EmailNickServHandler, self).__init__(*args, **kwargs)
-	def authenticate(self, client):
-		if self.email:
-			auth_msg = 'identify %s %s' % (self.email, self.password)
-		else:
-			auth_msg = 'identify %s' % self.password
-		client.msg('nickserv', auth_msg)
-
-class CommandNickServHandler(handlers.NickServHandler):
-	def authenticate(self, client):
-		client.send_message(Command([self.password], command='PASS'))
-
-class NoAuthNickHandler(handlers.NickServHandler):
-	def authenticate(self, client):
-		pass
-
-def get_nick_handler(no_auth=False, with_email=True):
-	handler = handlers.NickServHandler
-	if with_email:
-		handler = EmailNickServHandler
-	if no_auth:
-		handler = NoAuthNickHandler
-	class MyNickServHandler(RespectfulNickServHandler, handler):
-		pass
-	return MyNickServHandler
-
-
-def generic_recv(client, msg, sender=None):
+def generic_recv(client, msg):
 
 	params = msg.params
 	text = ' '.join(msg.params)
-	if not sender: sender = msg.sender
+	sender = msg.sender
 	is_action = False
+	quiet = CONF.quiet
 
 	if sender in IGNORE_NICKS:
 		return
@@ -275,7 +192,7 @@ def generic_recv(client, msg, sender=None):
 
 		if not msg.params:
 			# bad message
-			out(msg.encode().rstrip())
+			out(client, msg.encode().rstrip())
 			return
 
 		if isinstance(msg, CTCPMessage):
@@ -284,7 +201,7 @@ def generic_recv(client, msg, sender=None):
 					is_action = True
 					text = param[1]
 
-		if target == channel:
+		if target == CONF.channel:
 			if is_action:
 				outstr = "{sender:>{SENDER_WIDTH}} {text}"
 			else:
@@ -294,7 +211,7 @@ def generic_recv(client, msg, sender=None):
 		else:
 			# private message
 			sender = "[{}]".format(sender)
-			if target != nick:
+			if target != client.nick:
 				text = '[{}] {}'.format(target, text)
 			if is_action:
 				outstr = highlight("{sender:>{SENDER_WIDTH}} {text}", PRIVATE_HIGHLIGHT)
@@ -323,7 +240,7 @@ def generic_recv(client, msg, sender=None):
 		else:
 			# numeric command - unless excluded, print
 			if n in EXCLUDE_NUMERICS: return
-			if sender == host and params and params[0] == nick:
+			if sender == client.hostname and params and params[0] == client.nick:
 				outstr = highlight("{msg.command:>{SENDER_WIDTH}}: {text}", COMMAND_HIGHLIGHT)
 			else:
 				# not sure what circumstances this would apply for, use default
@@ -331,10 +248,10 @@ def generic_recv(client, msg, sender=None):
 	d = globals().copy()
 	d.update(locals())
 	if not nosend:
-		out(outstr.format(**d))
+		out(client, outstr.format(**d))
 
 
-def out(s):
+def out(client, s):
 
 	# irc style characters
 	s = irccolors.apply_irc_formatting(s)
@@ -349,9 +266,9 @@ def out(s):
 
 	# highlight nick
 	keywords = {}
-	keywords.update({user: USER_HIGHLIGHT for user in users})
-	keywords.update({user: OP_HIGHLIGHT for user in ops})
-	keywords.update({nick_normalize(nick): NICK_HIGHLIGHT})
+	keywords.update({user: USER_HIGHLIGHT for user in channel.users.users})
+	keywords.update({user: OP_HIGHLIGHT for user in channel.users.ops})
+	keywords.update({nick_normalize(client.nick): NICK_HIGHLIGHT})
 	keywords.update(KEYWORD_HIGHLIGHTS)
 	keywords = {k.lower(): v for k, v in keywords.items()}
 
@@ -391,16 +308,16 @@ def in_worker():
 					line = re.sub(r"(?<!\\)\\x([0-9a-fA-F]{2})", process_esc, line)
 					line = line.replace(r'\\', '\\')
 					if not line.startswith('/'):
-						message = PrivMsg(channel, line)
+						message = PrivMsg(CONF.channel, line)
 					else:
 						args = line[1:].split(' ')
 						line = lambda: ' '.join(args)
 						cmd = args.pop(0)
 						if not cmd:
 							# "/ TEXT" -> literal privmsg "/TEXT"
-							message = PrivMsg(channel, '/' + line())
+							message = PrivMsg(CONF.channel, '/' + line())
 						elif cmd == 'me':
-							message = Me(channel, line())
+							message = Me(CONF.channel, line())
 						elif cmd in ('msg', 'memsg'):
 							message_type = Me if cmd == 'memsg' else PrivMsg
 							if not args:
@@ -413,7 +330,7 @@ def in_worker():
 							exec line() in globals(), scope
 							message = scope.get('message', None)
 						elif cmd == 'sing':
-							message = PrivMsg(channel, "\xe2\x99\xab {} \xe2\x99\xab".format(line()))
+							message = PrivMsg(CONF.channel, "\xe2\x99\xab {} \xe2\x99\xab".format(line()))
 						else:
 							message = Command(args, command=cmd)
 					if message:
