@@ -45,6 +45,7 @@ USER_HIGHLIGHTS = {
 	'Bidbot': '1;33',
 	'DBEngineering': '1',
 	'DBCommand': '1',
+	'twitchnotify': '33',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
@@ -390,7 +391,7 @@ def out(s):
 	keywords = {}
 	keywords.update({user: USER_HIGHLIGHT for user in users})
 	keywords.update({user: OP_HIGHLIGHT for user in ops})
-	keywords.update({nick: NICK_HIGHLIGHT})
+	keywords.update({nick_normalize(nick): NICK_HIGHLIGHT})
 	keywords.update(KEYWORD_HIGHLIGHTS)
 	keywords = {k.lower(): v for k, v in keywords.items()}
 
