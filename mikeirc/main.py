@@ -127,15 +127,20 @@ def main():
 
 		USER_HIGHLIGHTS[channel.lstrip('#')] = '1' # channel owner bold
 
-		print "Loading emotes..."
-		emotes = requests.get('https://api.twitch.tv/kraken/chat/emoticons').json()
-		emotes = [x['regex'] for x in emotes['emoticons']]
-		n = len(emotes)
-		emotes = "|".join(["(?:{})".format(x.encode("utf-8")) for x in emotes])
-		emotes = r"\b(?:{})\b".format(emotes)
-		emotes = re.compile(emotes)
-		print "{} emotes loaded".format(n)
-		REGEX_HIGHLIGHTS[emotes] = TWITCH_EMOTE_HIGHLIGHT
+		try:
+			print "Loading emotes..."
+			emotes = requests.get('https://api.twitch.tv/kraken/chat/emoticons').json()
+			emotes = [x['regex'] for x in emotes['emoticons']]
+			n = len(emotes)
+			emotes = "|".join(["(?:{})".format(x.encode("utf-8")) for x in emotes])
+			emotes = r"\b(?:{})\b".format(emotes)
+			emotes = re.compile(emotes)
+			print "{} emotes loaded".format(n)
+			REGEX_HIGHLIGHTS[emotes] = TWITCH_EMOTE_HIGHLIGHT
+		except Exception as ex:
+			print "Failed to load emotes:"
+			import traceback
+			traceback.print_exc()
 
 	# TODO GET RID OF THIS FUCKER
 	globals().update(locals())
