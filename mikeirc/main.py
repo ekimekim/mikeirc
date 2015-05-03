@@ -426,6 +426,8 @@ def in_worker():
 		try:
 			while True:
 				line = editor.readline()
+				if isinstance(line, unicode):
+					line = line.encode('utf-8')
 				if line:
 					cmd = None
 					def process_esc(match):
