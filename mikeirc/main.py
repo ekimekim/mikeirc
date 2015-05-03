@@ -50,6 +50,14 @@ EXCLUDE_NUMERICS = {5}
 
 IGNORE_NICKS = {"fbt"}
 
+TWITCH_EVENT_SERVERS = {
+	'192.16.64.143',
+	'192.16.64.150',
+	'192.16.71.221',
+	'192.16.71.236',
+	'199.9.252.54',
+}
+
 main_greenlet = None
 
 
@@ -122,9 +130,8 @@ def main():
 			emotes = re.compile(emotes)
 			print "{} emotes loaded".format(n)
 			REGEX_HIGHLIGHTS[emotes] = TWITCH_EMOTE_HIGHLIGHT
-		except Exception as ex:
+		except Exception:
 			print "Failed to load emotes:"
-			import traceback
 			traceback.print_exc()
 
 	client = None
@@ -140,7 +147,7 @@ def main():
 
 			client.start()
 			# spawn input greenlet in client's Group, linking its lifecycle to the client
-			client._group.spawn(in_worker)
+			client._group.spawn(in_worker, client)
 
 			backoff.reset() # successful startup
 			client.wait_for_stop()
@@ -228,7 +235,7 @@ def generic_recv(client, msg):
 		chan, target, text = params[0], params[1], ' '.join(params[2:])
 		empty = ''
 		outstr = highlight("{empty:>{SENDER_WIDTH}} {target} kicked by {sender}: {text}", KICK_HIGHLIGHT)
-	elif msg.command == 'PING':
+	elif msg.command in ('PING', 'PONG'):
 		return
 	else:
 		if quiet: nosend = True
@@ -245,13 +252,12 @@ def generic_recv(client, msg):
 			else:
 				# not sure what circumstances this would apply for, use default
 				pass
-	d = globals().copy()
-	d.update(locals())
 	if not nosend:
-		out(client, outstr.format(**d))
+		out(client, outstr.format(**locals()))
 
 
 def out(client, s):
+	channel = client.channel(CONF.channel)
 
 	# irc style characters
 	s = irccolors.apply_irc_formatting(s)
@@ -293,7 +299,7 @@ def out(client, s):
 	editor.write(smart_reset(outbuf))
 
 
-def in_worker():
+def in_worker(client):
 	with editor:
 		try:
 			while True:
@@ -335,7 +341,7 @@ def in_worker():
 							message = Command(args, command=cmd)
 					if message:
 						client.send_message(message)
-						generic_recv(client, message, sender=nick)
+						generic_recv(client, message, sender=client.nick)
 					# post actions
 					if cmd == 'quit':
 						sys.exit()
@@ -345,12 +351,6 @@ def in_worker():
 		except EOFError:
 			sys.exit()
 
-def pinger():
-	"""We don't even care about getting a response, just make sure we're constantly writing to the socket,
-	otherwise we may not notice if it dies."""
-	while True:
-		gevent.sleep(60)
-		client.send_message(Command(["autoping"], command='PING'))
 
 if __name__=='__main__':
 	main()
