@@ -37,8 +37,9 @@ def apply_irc_formatting(line):
 	output = ''
 	while line:
 		c, line = eat(line, 1)
-		if FORMAT_MAP.get(c, None) is not None:
-			output += '\x1b[{}m'.format(FORMAT_MAP[c])
+		if c in FORMAT_MAP:
+			if FORMAT_MAP[c] is not None:
+				output += '\x1b[{}m'.format(FORMAT_MAP[c])
 		elif c == COLOR_CHAR:
 			match = re.match('([0-9]{1,2})(?:,([0-9]{1,2}))?(.*)', line)
 			if match:
