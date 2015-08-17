@@ -9,8 +9,8 @@ import sys
 import traceback
 from getpass import getpass
 
-from geventirc import Client
-from geventirc.message import Me, Command, PrivMsg, CTCPMessage
+from girc import Client
+from girc.message import Privmsg, Message
 
 import gtools
 import requests
@@ -102,7 +102,7 @@ def main():
 
 	if backdoor:
 		if backdoor is True:
-			backdoor = 1234
+			backdoor = 1235
 		gtools.backdoor(backdoor)
 
 	if twitch:
@@ -143,7 +143,7 @@ def main():
 			channel = client.channel(CONF.channel)
 			channel.join()
 
-			client.add_handler(generic_recv, command=PrivMsg)
+			client.handler(generic_recv)
 
 			client.start()
 			# spawn input greenlet in client's Group, linking its lifecycle to the client
@@ -176,11 +176,11 @@ def nick_normalize(nick):
 	return nick
 
 
-def generic_recv(client, msg):
+def generic_recv(client, msg, sender=None):
 
 	params = msg.params
 	text = ' '.join(msg.params)
-	sender = msg.sender
+	sender = sender or msg.sender
 	is_action = False
 	quiet = CONF.quiet
 
@@ -195,18 +195,18 @@ def generic_recv(client, msg):
 	nosend = False
 
 	if msg.command == 'PRIVMSG':
-		target, text = params[0], ' '.join(params[1:])
+		target, text = msg.target, msg.payload
 
 		if not msg.params:
 			# bad message
 			out(client, msg.encode().rstrip())
 			return
 
-		if isinstance(msg, CTCPMessage):
-			for param in msg.ctcp_params:
-				if param and param[0] == 'ACTION':
+		if msg.ctcp:
+			for ctcp_command, ctcp_arg in msg.ctcp:
+				if ctcp_command == 'ACTION':
 					is_action = True
-					text = param[1]
+					text = ctcp_arg
 
 		if target == CONF.channel:
 			if is_action:
@@ -253,7 +253,9 @@ def generic_recv(client, msg):
 				# not sure what circumstances this would apply for, use default
 				pass
 	if not nosend:
-		out(client, outstr.format(**locals()))
+		kwargs = globals().copy()
+		kwargs.update(locals())
+		out(client, outstr.format(**kwargs))
 
 
 def out(client, s):
@@ -313,43 +315,42 @@ def in_worker(client):
 						return chr(int(num, 16))
 					line = re.sub(r"(?<!\\)\\x([0-9a-fA-F]{2})", process_esc, line)
 					line = line.replace(r'\\', '\\')
+					message = None
 					if not line.startswith('/'):
-						message = PrivMsg(CONF.channel, line)
+						message = Privmsg(client, CONF.channel, line)
 					else:
 						args = line[1:].split(' ')
 						line = lambda: ' '.join(args)
 						cmd = args.pop(0)
 						if not cmd:
 							# "/ TEXT" -> literal privmsg "/TEXT"
-							message = PrivMsg(CONF.channel, '/' + line())
+							message = Privmsg(client, CONF.channel, '/' + line())
 						elif cmd == 'me':
-							message = Me(CONF.channel, line())
+							message = Privmsg.action(client, CONF.channel, line())
 						elif cmd in ('msg', 'memsg'):
-							message_type = Me if cmd == 'memsg' else PrivMsg
+							constructor = Privmsg.action if cmd == 'memsg' else Privmsg
 							if not args:
 								# XXX consider displaying an error msg?
 								continue
 							target = args.pop(0)
-							message = message_type(target, line())
+							message = constructor(client, target, line())
 						elif cmd == 'localexec':
 							scope = {}
 							exec line() in globals(), scope
 							message = scope.get('message', None)
 						elif cmd == 'sing':
-							message = PrivMsg(CONF.channel, "\xe2\x99\xab {} \xe2\x99\xab".format(line()))
+							message = Privmsg(client, CONF.channel, "\xe2\x99\xab {} \xe2\x99\xab".format(line()))
+						elif cmd == 'nick':
+							client.nick = line()
+						elif cmd == 'quit':
+							client.quit(line())
 						else:
-							message = Command(args, command=cmd)
+							message = Message(client, cmd, *args)
 					if message:
-						client.send_message(message)
+						message.send()
 						generic_recv(client, message, sender=client.nick)
-					# post actions
-					if cmd == 'quit':
-						sys.exit()
-					elif cmd == 'nick' and args:
-						global nick
-						nick = args[0]
 		except EOFError:
-			sys.exit()
+			client.quit("Exiting")
 
 
 if __name__=='__main__':
