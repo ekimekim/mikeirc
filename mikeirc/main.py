@@ -203,10 +203,10 @@ def generic_recv(client, msg, sender=None):
 			return
 
 		if msg.ctcp:
-			for ctcp_command, ctcp_arg in msg.ctcp:
-				if ctcp_command == 'ACTION':
-					is_action = True
-					text = ctcp_arg
+			command, ctcp_arg = msg.ctcp
+			if ctcp_command == 'ACTION':
+				is_action = True
+				text = ctcp_arg
 
 		if target == CONF.channel:
 			if is_action:
