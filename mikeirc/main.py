@@ -96,9 +96,11 @@ def main():
 		password = None
 	if twitch:
 		nickserv_password = None
-	else:
+	elif password:
 		nickserv_password = "{} {}".format(CONF.email, password) if CONF.email else password
 		password = None
+	else:
+		nickserv_password = None
 
 	if backdoor:
 		if backdoor is True:
@@ -203,7 +205,7 @@ def generic_recv(client, msg, sender=None):
 			return
 
 		if msg.ctcp:
-			command, ctcp_arg = msg.ctcp
+			ctcp_command, ctcp_arg = msg.ctcp
 			if ctcp_command == 'ACTION':
 				is_action = True
 				text = ctcp_arg
