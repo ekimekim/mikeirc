@@ -142,6 +142,10 @@ def main():
 		try:
 			client = Client(host, CONF.nick, port, real_name=CONF.real_name,
 							password=password, nickserv_password=nickserv_password)
+
+			if twitch:
+				Message(client, "CAP", "REQ", "twitch.tv/membership").send()
+
 			channel = client.channel(CONF.channel)
 			channel.join()
 
