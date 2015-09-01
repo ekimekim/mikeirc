@@ -58,9 +58,6 @@ TWITCH_EVENT_SERVERS = {
 	'199.9.252.54',
 }
 
-main_greenlet = None
-
-
 USER_HIGHLIGHTS = {nick.lower(): highlight for nick, highlight in USER_HIGHLIGHTS.items()}
 
 
