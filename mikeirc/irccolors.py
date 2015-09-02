@@ -6,7 +6,6 @@ FORMAT_MAP = {
 	'\x1f': '4', # underline
 	'\x16': '7', # reverse fore/background
 	'\x1d': None, # italic - not supported
-	'\x0f': '', # reset
 }
 
 # maps colors in color format specifiers to SGR colors 0-7
@@ -30,16 +29,33 @@ COLOR_MAP = {
 	15: '7', # light grey (silver)
 }
 COLOR_CHAR = '\x03'
+RESET_CHAR = '\x0f'
+
+
+def escape_for_formats(formats, colors):
+	values = []
+	for format in formats:
+		value = FORMAT_MAP.get(format)
+		if value:
+			values.append(value)
+	for color, base in zip(colors, [30, 40]):
+		if color:
+			values.append(base + color)
+	if not values:
+		return ""
+	return "\x1b[{}m".format(";".join(values))
 
 
 def apply_irc_formatting(line):
 	eat = lambda s, n: (s[:n], s[n:])
 	output = ''
+	formats = set()
+	colors = None, None
 	while line:
 		c, line = eat(line, 1)
 		if c in FORMAT_MAP:
-			if FORMAT_MAP[c] is not None:
-				output += '\x1b[{}m'.format(FORMAT_MAP[c])
+			formats ^= {c} # toggle state
+			
 		elif c == COLOR_CHAR:
 			match = re.match('([0-9]{1,2})(?:,([0-9]{1,2}))?(.*)', line)
 			if match:
