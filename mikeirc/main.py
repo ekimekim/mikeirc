@@ -58,6 +58,8 @@ TWITCH_EVENT_SERVERS = {
 	'199.9.252.54',
 }
 
+CLEAN_QUIT_TIMEOUT = 1
+
 USER_HIGHLIGHTS = {nick.lower(): highlight for nick, highlight in USER_HIGHLIGHTS.items()}
 
 
@@ -161,6 +163,13 @@ def main():
 			gevent.sleep(time)
 		else:
 			break
+		finally:
+			if client:
+				try:
+					with gevent.Timeout(CLEAN_QUIT_TIMEOUT):
+						client.quit("Quitting")
+				except (Exception, KeyboardInterrupt, gevent.Timeout) as ex:
+					client.stop(ex)
 
 
 normalize_patterns = r"([^|]+)|[^|]*", r"([^\[]+)\[[^\]]*\]"
