@@ -347,7 +347,7 @@ def in_worker(client):
 							target = args.pop(0)
 							message = constructor(client, target, line())
 						elif cmd == 'localexec':
-							scope = {}
+							scope = {'client':client}
 							exec line() in globals(), scope
 							message = scope.get('message', None)
 						elif cmd == 'sing':
