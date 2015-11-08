@@ -169,7 +169,10 @@ def main():
 					with gevent.Timeout(CLEAN_QUIT_TIMEOUT):
 						client.quit("Quitting")
 				except (Exception, KeyboardInterrupt, gevent.Timeout) as ex:
-					client.stop(ex)
+					try:
+						client.stop(ex)
+					except Exception:
+						pass
 
 
 normalize_patterns = r"([^|]+)|[^|]*", r"([^\[]+)\[[^\]]*\]"
