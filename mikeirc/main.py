@@ -146,7 +146,7 @@ def main():
 							password=password, nickserv_password=nickserv_password)
 
 			if twitch:
-				Message(client, "CAP", "REQ", "twitch.tv/membership").send()
+				Message(client, "CAP", "REQ", "twitch.tv/membership twitch.tv/commands").send()
 
 			channel = client.channel(CONF.channel)
 			channel.join()
