@@ -1,6 +1,7 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 
+import logging
 import os
 import random
 import re
@@ -87,6 +88,8 @@ def main():
 	backdoor = CONF.backdoor
 	twitch = CONF.twitch
 	password = CONF.password
+
+	logging.basicConfig(level=CONF.get('log', 'WARNING').upper())
 
 	# resolve password config options to actual password values
 	if password is None and not CONF.no_auth:
