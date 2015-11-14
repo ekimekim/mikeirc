@@ -254,7 +254,7 @@ def generic_recv(client, msg, sender=None):
 		chan, target, text = params[0], params[1], ' '.join(params[2:])
 		empty = ''
 		outstr = highlight("{empty:>{SENDER_WIDTH}} {target} kicked by {sender}: {text}", KICK_HIGHLIGHT)
-	elif msg.command in ('PING', 'PONG'):
+	elif msg.command in ('PING', 'PONG', 'USERSTATE'):
 		return
 	else:
 		if quiet: nosend = True
