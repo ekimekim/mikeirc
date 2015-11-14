@@ -201,6 +201,7 @@ def generic_recv(client, msg, sender=None):
 	sender = sender or msg.sender
 	is_action = False
 	quiet = CONF.quiet
+	nousers = CONF.nousers
 
 	if sender in IGNORE_NICKS:
 		return
@@ -244,11 +245,11 @@ def generic_recv(client, msg, sender=None):
 				outstr = highlight("{sender:>{SENDER_WIDTH}}: {text}", PRIVATE_HIGHLIGHT)
 	elif msg.command == 'QUIT':
 		outstr = highlight("{sender:>{SENDER_WIDTH}} quits: {text}", COMMAND_HIGHLIGHT)
-		if quiet: nosend = True
+		if quiet or nousers: nosend = True
 	elif msg.command == 'NICK':
 		target, text = params[0], ' '.join(params[1:])
 		outstr = highlight("{sender:>{SENDER_WIDTH}} changes their name to {target}", COMMAND_HIGHLIGHT)
-		if quiet: nosend = True
+		if quiet or nousers: nosend = True
 	elif msg.command == 'KICK':
 		chan, target, text = params[0], params[1], ' '.join(params[2:])
 		empty = ''
@@ -257,6 +258,7 @@ def generic_recv(client, msg, sender=None):
 		return
 	else:
 		if quiet: nosend = True
+		if nousers and msg.command in ('NAMES', 'JOIN', 'PART', 'MODE'): nosend = True
 		try:
 			n = int(msg.command, 10)
 		except ValueError:
