@@ -258,7 +258,7 @@ def generic_recv(client, msg, sender=None):
 		return
 	else:
 		if quiet: nosend = True
-		if nousers and msg.command in ('NAMES', 'JOIN', 'PART', 'MODE'): nosend = True
+		if nousers and msg.command in ('NAMES', 'JOIN', 'PART', 'MODE', '353', '366'): nosend = True
 		try:
 			n = int(msg.command, 10)
 		except ValueError:
