@@ -84,7 +84,7 @@ def main():
 	CONF['nick'] # just check it's there
 	CONF['channel']
 	# optional keys. note that defaults are None (which works as False)
-	port = int(CONF.port) or 6667
+	port = int(CONF.port or 6667)
 	backdoor = CONF.backdoor
 	twitch = CONF.twitch
 	password = CONF.password
