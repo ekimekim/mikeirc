@@ -240,7 +240,7 @@ def generic_recv(client, msg, sender=None):
 		else:
 			# private message
 			sender = "[{}]".format(sender)
-			if target != client.nick:
+			if not client.matches_nick(target):
 				text = '[{}] {}'.format(target, text)
 			if is_action:
 				outstr = highlight("{sender:>{SENDER_WIDTH}} {text}", PRIVATE_HIGHLIGHT)
@@ -270,7 +270,7 @@ def generic_recv(client, msg, sender=None):
 		else:
 			# numeric command - unless excluded, print
 			if n in EXCLUDE_NUMERICS: return
-			if sender == client.hostname and params and params[0] == client.nick:
+			if sender == client.hostname and params and client.matches_nick(params[0]):
 				outstr = highlight("{msg.command:>{SENDER_WIDTH}}: {text}", COMMAND_HIGHLIGHT)
 			else:
 				# not sure what circumstances this would apply for, use default
@@ -299,7 +299,7 @@ def out(client, s):
 	keywords = {}
 	keywords.update({user: USER_HIGHLIGHT for user in channel.users.users})
 	keywords.update({user: OP_HIGHLIGHT for user in channel.users.ops})
-	keywords.update({nick_normalize(client.nick): NICK_HIGHLIGHT})
+	keywords.update({nick_normalize(client._nick): NICK_HIGHLIGHT})
 	keywords.update(KEYWORD_HIGHLIGHTS)
 	keywords = {k.lower(): v for k, v in keywords.items()}
 
