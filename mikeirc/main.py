@@ -203,6 +203,33 @@ def generic_recv(client, msg, sender=None):
 				is_action = True
 				text = ctcp_arg
 
+		if CONF.twitch and msg.tags and msg.tags.get('emotes'):
+			ranges = []
+			try:
+				emotes = msg.tags['emotes'].split('/')
+				for emote in emotes:
+					emote_id, emote_ranges = emote.split(':')
+					for emote_range in emote_ranges.split(','):
+						start, end = emote_range.split('-')
+						ranges.append((int(start), int(end)))
+			except ValueError:
+				logging.warning("Malformed emotes tag: {!r}".format(msg.tags['emotes']), exc_info=True)
+			new_text = ''
+			pos = 0
+			for start, end in sorted(ranges):
+				if start < pos:
+					logging.warning("Overlapping emotes? emotes={!r}".format(msg.tags['emotes']))
+					continue
+				# add non-emote text between previous position and start
+				new_text += text[pos:start]
+				# add the emote text (note start-end is inclusive, so we +1 to make it range correctly)
+				new_text += highlight(text[start:end+1], TWITCH_EMOTE_HIGHLIGHT)
+				# set pos for next loop
+				pos = end + 1
+			# add final non-emote part after last emote
+			new_text += text[pos:]
+			text = new_text
+
 		if target == CONF.channel:
 			if is_action:
 				outstr = "{sender:>{SENDER_WIDTH}} {text}"
