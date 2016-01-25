@@ -14,7 +14,6 @@ from girc import Client
 from girc.message import Privmsg, Message
 
 import gtools
-import requests
 from backoff import Backoff
 from gevent.select import select
 from lineedit import LineEditing
@@ -123,21 +122,6 @@ def main():
 		# make channel owner bold
 		USER_HIGHLIGHTS[CONF.channel.lstrip('#')] = '1'
 
-		# load emotes
-		try:
-			print "Loading emotes..."
-			emotes = requests.get('https://api.twitch.tv/kraken/chat/emoticons').json()
-			emotes = [x['regex'] for x in emotes['emoticons']]
-			n = len(emotes)
-			emotes = "|".join(["(?:{})".format(x.encode("utf-8")) for x in emotes])
-			emotes = r"\b(?:{})\b".format(emotes)
-			emotes = re.compile(emotes)
-			print "{} emotes loaded".format(n)
-			REGEX_HIGHLIGHTS[emotes] = TWITCH_EMOTE_HIGHLIGHT
-		except Exception:
-			print "Failed to load emotes:"
-			traceback.print_exc()
-
 	client = None
 	backoff = Backoff(0.2, 10, 2)
 	while True:
@@ -212,11 +196,6 @@ def generic_recv(client, msg, sender=None):
 
 	if msg.command == 'PRIVMSG':
 		target, text = msg.target, msg.payload
-
-		if not msg.params:
-			# bad message
-			out(client, msg.encode().rstrip())
-			return
 
 		if msg.ctcp:
 			ctcp_command, ctcp_arg = msg.ctcp
