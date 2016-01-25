@@ -143,10 +143,7 @@ def main():
 	while True:
 		try:
 			client = Client(host, CONF.nick, port, real_name=CONF.real_name,
-							password=password, nickserv_password=nickserv_password)
-
-			if twitch:
-				Message(client, "CAP", "REQ", "twitch.tv/membership twitch.tv/commands").send()
+							password=password, nickserv_password=nickserv_password, twitch=twitch)
 
 			channel = client.channel(CONF.channel)
 			channel.join()
