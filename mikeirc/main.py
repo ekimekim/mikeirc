@@ -14,6 +14,7 @@ from girc import Client
 from girc.message import Privmsg, Message
 
 import gtools
+import requests
 from backoff import Backoff
 from gevent.select import select
 from lineedit import LineEditing
@@ -111,7 +112,13 @@ def main():
 	if twitch:
 		# make changes to host
 		if not isinstance(twitch, basestring):
-			host = 'irc.twitch.tv'
+			print "Loading chat server for channel..."
+			resp = requests.get('http://tmi.twitch.tv/servers', params={'channel': CONF.channel.lstrip('#')})
+			resp.raise_for_status()
+			servers = resp.json()['servers']
+			server = random.choice(servers)
+			host, _ = server.split(':')
+			print "Using twitch server:", host
 		elif twitch == 'event':
 			host = random.choice(TWITCH_EVENT_SERVERS)
 			print 'Using twitch event server:', host
