@@ -17,7 +17,7 @@ import gtools
 import requests
 from backoff import Backoff
 from gevent.select import select
-from lineedit import LineEditing
+from lineedit import LineEditing, complete_from
 from pyconfig import CONF
 
 import irccolors
@@ -69,7 +69,6 @@ def read():
 	r,w,x = select([fd], [], [])
 	assert fd in r
 	return os.read(fd, 1)
-editor = LineEditing(input_fn=read)
 
 
 def main():
@@ -139,11 +138,13 @@ def main():
 			channel = client.channel(CONF.channel)
 			channel.join()
 
-			client.handler(generic_recv)
+			editor = LineEditing(input_fn=read, completion=lambda prefix: complete_from(channel.users.users)(prefix.lower()))
+
+			client.handler(lambda client, msg: generic_recv(editor, client, msg))
 
 			client.start()
 			# spawn input greenlet in client's Group, linking its lifecycle to the client
-			client._group.spawn(in_worker, client)
+			client._group.spawn(in_worker, client, editor)
 
 			backoff.reset() # successful startup
 			client.wait_for_stop()
@@ -182,7 +183,7 @@ def nick_normalize(nick):
 	return nick
 
 
-def generic_recv(client, msg, sender=None):
+def generic_recv(editor, client, msg, sender=None):
 
 	params = msg.params
 	text = ' '.join(msg.params)
@@ -285,10 +286,10 @@ def generic_recv(client, msg, sender=None):
 	if not nosend:
 		kwargs = globals().copy()
 		kwargs.update(locals())
-		out(client, outstr.format(**kwargs))
+		out(editor, client, outstr.format(**kwargs))
 
 
-def out(client, s):
+def out(editor, client, s):
 	channel = client.channel(CONF.channel)
 
 	# irc style characters
@@ -331,7 +332,7 @@ def out(client, s):
 	editor.write(smart_reset(outbuf))
 
 
-def in_worker(client):
+def in_worker(client, editor):
 	with editor:
 		try:
 			while True:
@@ -378,7 +379,7 @@ def in_worker(client):
 							message = Message(client, cmd, *args)
 					if message:
 						message.send()
-						generic_recv(client, message, sender=client.nick)
+						generic_recv(editor, client, message, sender=client.nick)
 		except EOFError:
 			client.quit("Exiting")
 
