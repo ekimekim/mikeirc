@@ -271,7 +271,7 @@ def generic_recv(editor, client, msg, sender=None):
 		if quiet: nosend = True
 		if nousers and msg.command in ('NAMES', 'JOIN', 'PART', 'MODE', '353', '366'): nosend = True
 		try:
-			n = int(msg.command, 10)
+			n = int(msg.command)
 		except ValueError:
 			# unknown message type
 			pass
