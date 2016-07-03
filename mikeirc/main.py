@@ -138,7 +138,7 @@ def main():
 			channel = client.channel(CONF.channel)
 			channel.join()
 
-			editor = LineEditing(input_fn=read, completion=lambda prefix: complete_from(channel.users.users)(prefix.lower()))
+			editor = LineEditing(input_fn=read, completion=lambda prefix: complete_from(channel.users.users)(prefix.lower()), gevent_handle_sigint=True)
 
 			client.handler(lambda client, msg: generic_recv(editor, client, msg))
 
