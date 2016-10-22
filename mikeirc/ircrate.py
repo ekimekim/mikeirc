@@ -14,6 +14,7 @@ import gevent.lock
 
 from girc import Client
 import escapes
+import lineedit
 import termhelpers
 
 
@@ -46,6 +47,9 @@ class ExplicitlyBuffered(object):
 		self.fileobj.write(buf)
 		self.fileobj.flush()
 
+	def fileno(self):
+		return self.fileobj.fileno()
+
 
 def main(channel, user, oauth_file, log_level='WARNING'):
 	logging.basicConfig(level=log_level)
@@ -74,7 +78,12 @@ def main(channel, user, oauth_file, log_level='WARNING'):
 
 	client.start()
 	gevent.spawn(display_loop)
-	client.join()
+
+	try:
+		with lineedit.HiddenCursor():
+			client.join()
+	finally:
+		sys.stdout.flush() # explicit flush for unhide cursor
 
 
 def unicode_hist(series, length):
