@@ -38,14 +38,14 @@ USER_WIDTH = 12
 USER_HIGHLIGHTS = {
 	'BidServ': '1;33',
 	'Bidbot': '1;33',
-	'DBEngineering': '1',
-	'DBCommand': '1',
 	'twitchnotify': '33',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
 }
-REGEX_HIGHLIGHTS = {}
+REGEX_HIGHLIGHTS = {
+	'DB_.*': '1',
+}
 
 EXCLUDE_NUMERICS = {5}
 
@@ -298,7 +298,7 @@ def out(editor, client, s):
 	# scan for regexes
 	for regex, highlight in REGEX_HIGHLIGHTS.items():
 		if isinstance(regex, basestring):
-			regex = re.compile(regex)
+			regex = re.compile(regex, flags=re.I)
 		def wrap_it(match):
 			return '\x1b[{}m{}\x1b[m'.format(highlight, match.group())
 		s = regex.sub(wrap_it, s)
