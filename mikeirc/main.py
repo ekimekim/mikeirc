@@ -187,7 +187,7 @@ def generic_recv(editor, client, msg, sender=None):
 
 	params = msg.params
 	text = ' '.join(msg.params)
-	sender = sender or msg.sender
+	sender = sender or (msg.tags and msg.tags.get('display-name')) or msg.sender # on twitch, sender is lowercased but display-name is correct
 	is_action = False
 	quiet = CONF.quiet
 	nousers = CONF.nousers
