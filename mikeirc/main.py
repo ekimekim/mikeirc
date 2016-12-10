@@ -126,7 +126,7 @@ def main():
 			print 'Using custom twitch server:', host
 
 		# make channel owner bold
-		USER_HIGHLIGHTS[CONF.channel.lstrip('#')] = '1'
+		USER_HIGHLIGHTS[CONF.channel.lstrip('#').lower()] = '1'
 
 	client = None
 	backoff = Backoff(0.2, 10, 2)
@@ -244,7 +244,7 @@ def generic_recv(editor, client, msg, sender=None):
 			else:
 				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
 			if sender.lower() in USER_HIGHLIGHTS:
-				outstr = highlight(outstr, USER_HIGHLIGHTS[sender])
+				outstr = highlight(outstr, USER_HIGHLIGHTS[sender.lower()])
 		else:
 			# private message
 			sender = "[{}]".format(sender)
