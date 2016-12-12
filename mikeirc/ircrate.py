@@ -2,7 +2,7 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 
-from collections import Counter
+from collections import Counter, defaultdict
 import itertools
 import logging
 import os
@@ -28,6 +28,7 @@ hist_time = 20
 hist_min_msgs = 5
 hist_min_count = 2
 hist_min_force_count = 5
+hist_fold_case = True
 cols, _ = termhelpers.termsize()
 display_interval = 0.1
 smooth_unicode_hist = False
@@ -121,7 +122,14 @@ def display(now):
 	window = [(t, s) for t, s in window if t > now - max_time]
 	lines += [rates, '']
 
-	msgs = Counter(s for t, s in window if t > now - hist_time)
+	msgs = [s for t, s in window if t > now - hist_time]
+	if hist_fold_case:
+		folds = defaultdict(Counter)
+		for msg in msgs:
+			folds[msg.lower()].update([msg])
+		msgs = {c.most_common(1)[0][0]: sum(c.values()) for c in folds.values()}
+	else:
+		msgs = Counter(s for t, s in window if t > now - hist_time)
 	msgs = [(count, "{:<4d}{}".format(count, s[:cols-4])) for s, count in msgs.items() if count >= hist_min_count]
 	msgs.sort(reverse=True)
 	msgs_force = [s for count, s in msgs if count >= hist_min_force_count]
