@@ -33,6 +33,7 @@ TWITCH_EMOTE_HIGHLIGHT = "36"
 
 SENDER_WIDTH = 12
 USER_WIDTH = 12
+REDRAW_LINES = 100
 
 USER_HIGHLIGHTS = {
 	'BidServ': '1;33',
@@ -62,6 +63,7 @@ CLEAN_QUIT_TIMEOUT = 1
 
 USER_HIGHLIGHTS = {nick.lower(): highlight for nick, highlight in USER_HIGHLIGHTS.items()}
 
+replay_history = []
 
 def read():
 	fd = sys.stdin.fileno()
@@ -350,7 +352,10 @@ def out(editor, client, s):
 			if outbuf.endswith('\x1b['):
 				in_escape = True
 	outbuf = outbuf[:-1] # remove terminator
-	editor.write(irccolors.apply_irc_formatting(outbuf))
+	line = irccolors.apply_irc_formatting(outbuf)
+	global replay_history
+	replay_history = (replay_history + [line])[:REDRAW_LINES]
+	editor.write(line)
 
 
 def in_worker(client, editor):
@@ -396,6 +401,9 @@ def in_worker(client, editor):
 							client.nick = line()
 						elif cmd == 'quit':
 							client.quit(line())
+						elif cmd == 'redraw':
+							for line in replay_history:
+								editor.write(line)
 						else:
 							message = Message(client, cmd, *args)
 					if message:
