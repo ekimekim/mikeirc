@@ -191,6 +191,7 @@ def generic_recv(editor, client, msg, sender=None):
 	is_action = False
 	quiet = CONF.quiet
 	nousers = CONF.nousers
+	empty = ''
 
 	if sender in IGNORE_NICKS:
 		return
@@ -263,8 +264,25 @@ def generic_recv(editor, client, msg, sender=None):
 		if quiet or nousers: nosend = True
 	elif msg.command == 'KICK':
 		chan, target, text = params[0], params[1], ' '.join(params[2:])
-		empty = ''
 		outstr = highlight("{empty:>{SENDER_WIDTH}} {target} kicked by {sender}: {text}", KICK_HIGHLIGHT)
+	elif msg.command == 'CLEARCHAT':
+		chan, target = params
+		text = msg.tags.get('ban-reason', '<no message>')
+		duration = msg.tags.get('ban-duration')
+		dur_text = 'timed out for {}s'.format(duration) if duration is not None else 'banned'
+		outstr = highlight("{empty:>{SENDER_WIDTH}} {target} {dur_text}: {text}", KICK_HIGHLIGHT)
+	elif msg.command == 'ROOMSTATE':
+		changes = ', '.join("{}={!r}".format(k, v) for k, v in msg.tags.items())
+		outstr = highlight("{empty:>{SENDER_WIDTH}} Room state change: {changes}", KICK_HIGHLIGHT)
+	elif msg.command == 'USERNOTICE' and msg.tags['msg-id'] == 'resub':
+		sender = msg.tags['login']
+		months = msg.tags['msg-param-months']
+		if len(msg.params) == 2:
+			chan, text = msg.params
+			suffix = ': {}'.format(text)
+		else:
+			suffix = ''
+		outstr = highlight("{sender:>{SENDER_WIDTH}} subscribed for {months} months{suffix}", PRIVATE_HIGHLIGHT)
 	elif msg.command in ('PING', 'PONG', 'USERSTATE'):
 		return
 	else:
