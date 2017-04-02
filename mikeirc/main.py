@@ -276,7 +276,7 @@ def generic_recv(editor, client, msg, sender=None):
 		chan, target = params
 		text = msg.tags.get('ban-reason', '<no message>')
 		duration = msg.tags.get('ban-duration')
-		dur_text = 'timed out for {0}({0!r})s'.format(duration) if duration is not None else 'banned'
+		dur_text = 'timed out for {}s'.format(duration) if duration is not None else 'banned'
 		outstr = highlight("{empty:>{SENDER_WIDTH}} {target} {dur_text}: {text}", KICK_HIGHLIGHT)
 	elif msg.command == 'ROOMSTATE':
 		changes = ', '.join("{}={!r}".format(k, v) for k, v in msg.tags.items())
