@@ -187,11 +187,18 @@ def generic_recv(editor, client, msg, sender=None):
 
 	params = msg.params
 	text = ' '.join(msg.params)
-	sender = sender or (msg.tags and msg.tags.get('display-name')) or msg.sender # on twitch, sender is lowercased but display-name is correct
 	is_action = False
 	quiet = CONF.quiet
 	nousers = CONF.nousers
 	empty = ''
+
+	# On twitch, sender is lowercased but display-name is correct, for ascii names.
+	# For eg. chinese names, the display name is the chinese characters and the sender is the ascii username.
+	# For this case, we display both.
+	if not sender:
+		sender = (msg.tags and msg.tags.get('display-name')) or msg.sender
+		if msg.sender and sender.lower() != msg.sender.lower():
+			sender = '{}({})'.format(sender, msg.sender)
 
 	if sender in IGNORE_NICKS:
 		return
