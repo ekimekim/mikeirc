@@ -21,7 +21,6 @@ from lineedit import LineEditing, complete_from
 from pyconfig import CONF
 
 import irccolors
-from smart_reset import smart_reset
 
 
 COMMAND_HIGHLIGHT = "30"
@@ -317,9 +316,6 @@ def generic_recv(editor, client, msg, sender=None):
 def out(editor, client, s):
 	channel = client.channel(CONF.channel)
 
-	# irc style characters
-	s = irccolors.apply_irc_formatting(s)
-
 	# scan for regexes
 	for regex, highlight in REGEX_HIGHLIGHTS.items():
 		if isinstance(regex, basestring):
@@ -354,7 +350,7 @@ def out(editor, client, s):
 			if outbuf.endswith('\x1b['):
 				in_escape = True
 	outbuf = outbuf[:-1] # remove terminator
-	editor.write(smart_reset(outbuf))
+	editor.write(irccolors.apply_irc_formatting(outbuf))
 
 
 def in_worker(client, editor):
