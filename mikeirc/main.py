@@ -134,7 +134,7 @@ def main():
 	while True:
 		try:
 			client = Client(host, CONF.nick, port, real_name=CONF.real_name,
-							password=password, nickserv_password=nickserv_password, twitch=twitch)
+							password=password, nickserv_password=nickserv_password, twitch=twitch, ssl=CONF.ssl)
 
 			channel = client.channel(CONF.channel)
 			channel.join()
