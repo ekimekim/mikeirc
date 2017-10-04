@@ -30,6 +30,7 @@ NICK_HIGHLIGHT = "31;1"
 USER_HIGHLIGHT = "32"
 OP_HIGHLIGHT = "33"
 TWITCH_EMOTE_HIGHLIGHT = "36"
+SOFT_IGNORE_HIGHLIGHT = "30"
 
 SENDER_WIDTH = 12
 USER_WIDTH = 12
@@ -252,6 +253,8 @@ def generic_recv(editor, client, msg, sender=None):
 				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
 			if sender.lower() in USER_HIGHLIGHTS:
 				outstr = highlight(outstr, USER_HIGHLIGHTS[sender.lower()])
+			if sender.lower() in CONF.soft_ignore_nicks:
+				outstr = highlight("{sender:>{SENDER_WIDTH}} said something", SOFT_IGNORE_HIGHLIGHT)
 		else:
 			# private message
 			sender = "[{}]".format(sender)
