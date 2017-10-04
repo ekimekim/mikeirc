@@ -49,8 +49,6 @@ REGEX_HIGHLIGHTS = {
 
 EXCLUDE_NUMERICS = {5}
 
-IGNORE_NICKS = {"fbt"}
-
 TWITCH_EVENT_SERVERS = {
 	'192.16.64.143',
 	'192.16.64.150',
@@ -201,7 +199,7 @@ def generic_recv(editor, client, msg, sender=None):
 		if msg.sender and sender.lower() != msg.sender.lower():
 			sender = '{}({})'.format(sender, msg.sender)
 
-	if sender in IGNORE_NICKS:
+	if sender in CONF.ignore_nicks:
 		return
 
 	highlight = lambda outstr, sequence: '\x1b[{}m{}\x1b[m'.format(sequence, outstr)
