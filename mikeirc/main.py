@@ -200,10 +200,15 @@ def generic_recv(editor, client, msg, sender=None):
 		if msg.sender and sender.lower() != msg.sender.lower():
 			sender = '{}({})'.format(sender, msg.sender)
 
-	if sender in CONF.ignore_nicks:
+	if sender and sender.lower() in [n.lower() for n in CONF.ignore_nicks]:
 		return
 
 	highlight = lambda outstr, sequence: '\x1b[{}m{}\x1b[m'.format(sequence, outstr)
+	def highlight(outstr, sequence):
+		fmt = '\x1b[{}m{}\x1b[m'
+		if isinstance(outstr, unicode):
+			fmt = fmt.decode('utf-8')
+		return fmt.format(sequence, outstr)
 
 	# default outstr
 	outstr = highlight("{sender:>{SENDER_WIDTH}}: {msg.command} {text}", COMMAND_HIGHLIGHT)
@@ -230,7 +235,13 @@ def generic_recv(editor, client, msg, sender=None):
 						ranges.append((int(start), int(end)))
 			except ValueError:
 				logging.warning("Malformed emotes tag: {!r}".format(msg.tags['emotes']), exc_info=True)
-			new_text = ''
+			# counting code points is correct, but might not be possible if invalid
+			try:
+				text = text.decode('utf-8')
+			except UnicodeDecodeError:
+				new_text = ''
+			else:
+				new_next = u''
 			pos = 0
 			for start, end in sorted(ranges):
 				if start < pos:
@@ -245,6 +256,8 @@ def generic_recv(editor, client, msg, sender=None):
 			# add final non-emote part after last emote
 			new_text += text[pos:]
 			text = new_text
+			if isinstance(text, unicode):
+				text = text.encode('utf-8')
 
 		if target == CONF.channel:
 			if is_action:
@@ -253,7 +266,7 @@ def generic_recv(editor, client, msg, sender=None):
 				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
 			if sender.lower() in USER_HIGHLIGHTS:
 				outstr = highlight(outstr, USER_HIGHLIGHTS[sender.lower()])
-			if sender.lower() in CONF.soft_ignore_nicks:
+			if sender.lower() in [n.lower() for n in CONF.soft_ignore_nicks]:
 				outstr = highlight("{sender:>{SENDER_WIDTH}} said something", SOFT_IGNORE_HIGHLIGHT)
 		else:
 			# private message

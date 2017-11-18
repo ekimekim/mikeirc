@@ -1,4 +1,5 @@
 import itertools
+import logging
 import re
 
 # for non-color formats, maps character to SGR escape string
@@ -60,16 +61,18 @@ def apply_irc_formatting(line):
 			irc_formats ^= {c} # toggle state
 			
 		elif c == COLOR_CHAR:
-			match = re.match('([0-9]{1,2})(?:,([0-9]{1,2}))?(.*)', line)
-			if match:
-				fore, back, line = match.groups()
-				get_color = lambda color: COLOR_MAP.get(int(color), '9') # default to reset for out of range
-				if back is None:
-					irc_colors = get_color(fore), irc_colors[1]
-				else:
-					irc_colors = get_color(fore), get_color(back)
-			else:
+			match = re.match('([0-9]{1,2})?(?:,([0-9]{1,2}))?(.*)', line)
+			if not match:
+				logging.warning("did not get a color match, this shouldn't be possible: {!r}".format(line))
+				continue
+			fore, back, line = match.groups()
+			get_color = lambda color: COLOR_MAP.get(int(color), '9') # default to reset for out of range
+			if (fore, back) == (None, None):
 				irc_colors = None, None
+			else:
+				fore = irc_colors[0] if fore is None else get_color(fore)
+				back = irc_colors[1] if back is None else get_color(back)
+				irc_colors = fore, back
 
 		elif c == RESET_CHAR:
 			irc_colors = None, None
