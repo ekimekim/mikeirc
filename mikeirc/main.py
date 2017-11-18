@@ -44,12 +44,33 @@ USER_HIGHLIGHTS = {
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
+	'VST': NICK_HIGHLIGHT,
+	'DBVideoStrikeTeam': NICK_HIGHLIGHT,
 }
 REGEX_HIGHLIGHTS = {
 	'DB_.*': '1',
 }
 
 EXCLUDE_NUMERICS = {5}
+
+# for VST
+MACROS = {
+	"videos":
+		"Missed any of DB2017 and want to catch up? The VST has you covered, with full event logs and youtube videos. Check it out! http://db11.vst.ninja",
+	"poster":
+		"Miss a poster update? Check out http://vst.ninja/DB11/posters/ to see the poster versions as it grows! Or check http://vst.ninja/DB11/postermap to see the clips that the poster references!",
+	"stats":
+		"Fun stats generated from the chat, for all your inner math nerd needs! http://chatstats.vst.ninja",
+	"milestones":
+		"Want to see how close we are to various milestones? Check out https://vst.ninja/milestones/",
+	"graphs":
+		"Wondering how we're doing against other shifts or previous years? Check out the VST's fancy graphs! http://graphs.vst.ninja",
+}
+for word in {
+	'milestone', 'poster', 'video', 'videos', 'stats', 'graphs', 'youtube', 'clip', 'postermap',
+	'sheet', 'strike'
+}:
+	KEYWORD_HIGHLIGHTS[word] = KICK_HIGHLIGHT
 
 TWITCH_EVENT_SERVERS = {
 	'192.16.64.143',
@@ -433,6 +454,8 @@ def in_worker(client, editor):
 						elif cmd == 'redraw':
 							for line in replay_history:
 								editor.write(line)
+						elif cmd in MACROS:
+							message = Privmsg(client, CONF.channel, MACROS[cmd])
 						else:
 							message = Message(client, cmd, *args)
 					if message:
