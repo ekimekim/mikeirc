@@ -241,7 +241,7 @@ def generic_recv(editor, client, msg, sender=None):
 			except UnicodeDecodeError:
 				new_text = ''
 			else:
-				new_next = u''
+				new_text = u''
 			pos = 0
 			for start, end in sorted(ranges):
 				if start < pos:
