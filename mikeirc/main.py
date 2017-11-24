@@ -40,6 +40,7 @@ USER_HIGHLIGHTS = {
 	'BidServ': '1;33',
 	'Bidbot': '1;33',
 	'twitchnotify': '33',
+	'MikeLLunsford': '1',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
