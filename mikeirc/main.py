@@ -68,7 +68,7 @@ MACROS = {
 }
 for word in {
 	'milestone', 'poster', 'video', 'videos', 'stats', 'graphs', 'youtube', 'clip', 'postermap',
-	'sheet', 'strike'
+	'sheet', 'strike', 'missed', 'timeline', 'upload', 'uploaded', 'link', 'request', 'clip',
 }:
 	KEYWORD_HIGHLIGHTS[word] = KICK_HIGHLIGHT
 
