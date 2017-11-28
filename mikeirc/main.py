@@ -93,7 +93,7 @@ def main():
 		'level': CONF.get('log', 'WARNING').upper(),
 	}
 	if CONF.log_file:
-		log_args['filepath'] = CONF.log_file
+		log_args['filename'] = CONF.log_file
 	logging.basicConfig(**log_args)
 
 	# resolve password config options to actual password values
@@ -190,7 +190,7 @@ def nick_normalize(nick):
 
 def compose_re_any(regexes):
 	"""Compose a list of regexes into a single regex that matches if any of the input regexes match."""
-	return '|'.join('({})'.format(n for n in regexes))
+	return '|'.join('({})'.format(n) for n in regexes)
 
 def generic_recv(editor, client, msg, sender=None):
 
@@ -278,7 +278,7 @@ def generic_recv(editor, client, msg, sender=None):
 			if sender.lower() in USER_HIGHLIGHTS:
 				outstr = highlight(outstr, USER_HIGHLIGHTS[sender.lower()])
 			match = re.match(soft_ignore_nick_re, sender)
-			logging.debug("checking if {!r} matches {!r} for soft ignore: {}".format(sender, soft_ignore_nick_re, bool(match))
+			logging.debug("checking if {!r} matches {!r} for soft ignore: {}".format(sender, soft_ignore_nick_re, bool(match)))
 			if match:
 				outstr = highlight("{sender:>{SENDER_WIDTH}} said something", SOFT_IGNORE_HIGHLIGHT)
 		else:
