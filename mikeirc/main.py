@@ -190,6 +190,8 @@ def nick_normalize(nick):
 
 def compose_re_any(regexes):
 	"""Compose a list of regexes into a single regex that matches if any of the input regexes match."""
+	if not regexes:
+		return '$^' # match nothing
 	return '|'.join('({})'.format(n) for n in regexes)
 
 def generic_recv(editor, client, msg, sender=None):
