@@ -183,6 +183,9 @@ def nick_normalize(nick):
 			nick, = match.groups()
 	return nick
 
+def compose_re_any(regexes):
+	"""Compose a list of regexes into a single regex that matches if any of the input regexes match."""
+	return '|'.join('({})'.format(n for n in regexes))
 
 def generic_recv(editor, client, msg, sender=None):
 
@@ -192,6 +195,8 @@ def generic_recv(editor, client, msg, sender=None):
 	quiet = CONF.quiet
 	nousers = CONF.nousers
 	empty = ''
+	ignore_nick_re = '^({})$'.format(compose_re_any(CONF.ignore_nicks))
+	soft_ignore_nick_re = '^({})$'.format(compose_re_any(CONF.soft_ignore_nicks))
 
 	# On twitch, sender is lowercased but display-name is correct, for ascii names.
 	# For eg. chinese names, the display name is the chinese characters and the sender is the ascii username.
@@ -201,7 +206,7 @@ def generic_recv(editor, client, msg, sender=None):
 		if msg.sender and sender.lower() != msg.sender.lower():
 			sender = '{}({})'.format(sender, msg.sender)
 
-	if sender and sender.lower() in [n.lower() for n in CONF.ignore_nicks]:
+	if sender and re.match(ignore_nick_re, sender):
 		return
 
 	highlight = lambda outstr, sequence: '\x1b[{}m{}\x1b[m'.format(sequence, outstr)
@@ -267,7 +272,7 @@ def generic_recv(editor, client, msg, sender=None):
 				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
 			if sender.lower() in USER_HIGHLIGHTS:
 				outstr = highlight(outstr, USER_HIGHLIGHTS[sender.lower()])
-			if sender.lower() in [n.lower() for n in CONF.soft_ignore_nicks]:
+			if re.match(soft_ignore_nick_re, sender):
 				outstr = highlight("{sender:>{SENDER_WIDTH}} said something", SOFT_IGNORE_HIGHLIGHT)
 		else:
 			# private message
