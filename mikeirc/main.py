@@ -89,7 +89,12 @@ def main():
 	twitch = CONF.twitch
 	password = CONF.password
 
-	logging.basicConfig(level=CONF.get('log', 'WARNING').upper())
+	log_args = {
+		'level': CONF.get('log', 'WARNING').upper(),
+	}
+	if CONF.log_file:
+		log_args['filepath'] = CONF.log_file
+	logging.basicConfig(**log_args)
 
 	# resolve password config options to actual password values
 	if password is None and not CONF.no_auth:
@@ -272,7 +277,9 @@ def generic_recv(editor, client, msg, sender=None):
 				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
 			if sender.lower() in USER_HIGHLIGHTS:
 				outstr = highlight(outstr, USER_HIGHLIGHTS[sender.lower()])
-			if re.match(soft_ignore_nick_re, sender):
+			match = re.match(soft_ignore_nick_re, sender)
+			logging.debug("checking if {!r} matches {!r} for soft ignore: {}".format(sender, soft_ignore_nick_re, bool(match))
+			if match:
 				outstr = highlight("{sender:>{SENDER_WIDTH}} said something", SOFT_IGNORE_HIGHLIGHT)
 		else:
 			# private message
