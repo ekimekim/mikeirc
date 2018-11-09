@@ -56,15 +56,13 @@ EXCLUDE_NUMERICS = {5}
 # for VST
 MACROS = {
 	"videos":
-		"Missed any of DB2017 and want to catch up? The VST has you covered, with full event logs and youtube videos. Check it out! http://db11.vst.ninja",
+		"Missed any of DB2018 and want to catch up? The VST has you covered, with full event logs and youtube videos. Check it out! http://db12.vst.ninja",
 	"poster":
-		"Miss a poster update? Check out http://vst.ninja/DB11/posters/ to see the poster versions as it grows! Or check http://vst.ninja/DB11/postermap to see the clips that the poster references!",
+		"Miss a poster update? Check out http://vst.ninja/DB12/posters/ to see the poster versions as it grows! Or check http://vst.ninja/DB12/postermap to see the clips that the poster references!",
 	"stats":
 		"Fun stats generated from the chat, for all your inner math nerd needs! http://chatstats.vst.ninja",
 	"milestones":
 		"Want to see how close we are to various milestones? Check out https://vst.ninja/milestones/",
-	"graphs":
-		"Wondering how we're doing against other shifts or previous years? Check out the VST's fancy graphs! http://graphs.vst.ninja",
 }
 for word in {
 	'milestone', 'poster', 'video', 'videos', 'stats', 'graphs', 'youtube', 'clip', 'postermap',
