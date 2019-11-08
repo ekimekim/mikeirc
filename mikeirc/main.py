@@ -56,13 +56,19 @@ EXCLUDE_NUMERICS = {5}
 # for VST
 MACROS = {
 	"videos":
-		"Missed any of DB2018 and want to catch up? The VST has you covered, with full event logs and youtube videos. Check it out! http://db12.vst.ninja",
+		"Missed any of DB2019 and want to catch up? The VST has you covered, with full event logs and youtube videos. Check it out! https://db13.vst.ninja",
 	"poster":
-		"Miss a poster update? Check out http://vst.ninja/DB12/posters/ to see the poster versions as it grows! Or check http://vst.ninja/DB12/postermap to see the clips that the poster references!",
+		"Miss a poster update? Check out https://vst.ninja/DB13/posters/ to see the poster versions as it grows! Or check https://vst.ninja/DB13/postermap to see the clips that the poster references! Here's the latest poster: https://vst.ninja/DB13/posters/latest.jpg",
 	"stats":
 		"Fun stats generated from the chat, for all your inner math nerd needs! http://chatstats.vst.ninja",
 	"milestones":
 		"Want to see how close we are to various milestones? Check out https://vst.ninja/milestones/",
+	"gifs":
+		"Our Giffers work around the clock to make you say 'I remember that!' or 'Wait, when did that happen?'. Check out their efforts at http://greywool.com/desertbus/2019/gifs/",
+	"picnic":
+		"Hey folks. While you *calmly* wait for the stream's inevitable return, why not take the opportunity to catch up on some stuff you missed? https://vst.ninja/DB13/",
+	"missing":
+		"Have you been a DesertBus fan for a long time? Do you like to hoard things like video captures? See if you can help us complete our archive at http://vst.ninja/missingdata/",
 }
 for word in {
 	'milestone', 'poster', 'video', 'videos', 'stats', 'graphs', 'youtube', 'clip', 'postermap',
