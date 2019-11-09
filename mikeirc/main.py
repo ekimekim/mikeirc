@@ -40,7 +40,8 @@ USER_HIGHLIGHTS = {
 	'BidServ': '1;33',
 	'Bidbot': '1;33',
 	'twitchnotify': '33',
-	'MikeLLunsford': '1',
+	'MLeeLunsford': '1',
+	'Ashton': '1',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
@@ -49,6 +50,7 @@ KEYWORD_HIGHLIGHTS = {
 }
 REGEX_HIGHLIGHTS = {
 	'DB_.*': '1',
+	'.*_LRR': '1',
 }
 
 EXCLUDE_NUMERICS = {5}
