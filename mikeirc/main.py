@@ -60,7 +60,7 @@ MACROS = {
 	"videos":
 		"Missed any of DB2019 and want to catch up? The VST has you covered, with full event logs and youtube videos. Check it out! https://db13.vst.ninja",
 	"poster":
-		"Miss a poster update? Check out https://vst.ninja/DB13/posters/ to see the poster versions as it grows! Or check https://vst.ninja/DB13/postermap to see the clips that the poster references! Here's the latest poster: https://vst.ninja/DB13/posters/latest.jpg",
+		"Miss a poster update? Check out https://vst.ninja/DB13/posters/ to see the poster versions as it grows! Or check https://vst.ninja/DB13/postermap to see the clips that the poster references! Here's the latest poster: https://vst.ninja/DB13/posters/latest.png",
 	"stats":
 		"Fun stats generated from the chat, for all your inner math nerd needs! http://chatstats.vst.ninja",
 	"milestones":

@@ -71,11 +71,11 @@ def main(channel, user, oauth_file, log_level='WARNING'):
 		if len(payload) > cols - 1:
 			payload = payload[:cols-3] + '...'
 
-#		with output_lock:
-#			sys.stdout.write('\n')
-#			display(now)
-#			sys.stdout.write(payload)
-#			sys.stdout.flush()
+		with output_lock:
+			sys.stdout.write('\n')
+			display(now)
+			sys.stdout.write(payload)
+			sys.stdout.flush()
 
 	client.start()
 	gevent.spawn(display_loop)

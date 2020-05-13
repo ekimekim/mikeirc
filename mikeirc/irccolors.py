@@ -66,7 +66,7 @@ def apply_irc_formatting(line):
 				logging.warning("did not get a color match, this shouldn't be possible: {!r}".format(line))
 				continue
 			fore, back, line = match.groups()
-			get_color = lambda color: COLOR_MAP.get(int(color), '9') # default to reset for out of range
+			get_color = lambda color: COLOR_MAP.get(int(color), 9) # default to reset for out of range
 			if (fore, back) == (None, None):
 				irc_colors = None, None
 			else:
