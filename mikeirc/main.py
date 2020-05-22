@@ -43,6 +43,7 @@ USER_HIGHLIGHTS = {
 	'MLeeLunsford': '1',
 	'Ashton': '1',
 	'SergeYager': '1',
+	'Seabats': '1',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
