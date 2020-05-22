@@ -42,6 +42,7 @@ USER_HIGHLIGHTS = {
 	'twitchnotify': '33',
 	'MLeeLunsford': '1',
 	'Ashton': '1',
+	'SergeYager': '1',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
