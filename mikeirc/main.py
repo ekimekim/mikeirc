@@ -44,13 +44,18 @@ USER_HIGHLIGHTS = {
 	'Ashton': '1',
 	'SergeYager': '1',
 	'Seabats': '1',
+	'jchinnock': '1',
+	'ihorner': '1',
+	'Bengineering': '1',
+	'Voxlunch': '1',
+	'Tuxbeej': '1',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
 	'VST': NICK_HIGHLIGHT,
 	'DBVideoStrikeTeam': NICK_HIGHLIGHT,
 }
-REGEX_HIGHLIGHTS = {
+USER_REGEX_HIGHLIGHTS = {
 	'DB_.*': '1',
 	'.*_LRR': '1',
 }
@@ -308,6 +313,11 @@ def generic_recv(editor, client, msg, sender=None):
 				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
 			if sender.lower() in USER_HIGHLIGHTS:
 				outstr = highlight(outstr, USER_HIGHLIGHTS[sender.lower()])
+			for regex, hl in USER_REGEX_HIGHLIGHTS.items():
+				if isinstance(regex, basestring):
+					regex = re.compile(regex, flags=re.I)
+				if regex.match(sender):
+					outstr = highlight(outstr, hl)
 			match = re.match(soft_ignore_nick_re, sender)
 			logging.debug("checking if {!r} matches {!r} for soft ignore: {}".format(sender, soft_ignore_nick_re, bool(match)))
 			if match:
@@ -375,14 +385,6 @@ def generic_recv(editor, client, msg, sender=None):
 
 def out(editor, client, s):
 	channel = client.channel(CONF.channel)
-
-	# scan for regexes
-	for regex, highlight in REGEX_HIGHLIGHTS.items():
-		if isinstance(regex, basestring):
-			regex = re.compile(regex, flags=re.I)
-		def wrap_it(match):
-			return '\x1b[{}m{}\x1b[m'.format(highlight, match.group())
-		s = regex.sub(wrap_it, s)
 
 	# highlight nick
 	keywords = {}
