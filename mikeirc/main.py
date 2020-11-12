@@ -49,6 +49,7 @@ USER_HIGHLIGHTS = {
 	'Bengineering': '1',
 	'Voxlunch': '1',
 	'Tuxbeej': '1',
+	'andrew': '1',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
