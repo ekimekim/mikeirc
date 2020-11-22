@@ -78,7 +78,7 @@ MACROS = {
 	"donor":
 		"Don't forget to sign up for a donor account at https://desertbus.org/donor/sign-up so you can win Giveaways with your donations! And link that twitch account so you can bid on Live Auctions!",
 	"vst":
-		"The VST, or Video Strike Team, is a group of people that catalog, capture, clip, and upload moments from desertbus to youtube. You can find our website at https://vst.ninja or our youtube page at https://www.youtube.com/DesertBusForHope"
+		"The VST, or Video Strike Team, is a group of people that catalog, capture, clip, and upload moments from desertbus to youtube. You can find our website at https://vst.ninja or our youtube page at https://www.youtube.com/DesertBusForHope",
 	"picnic":
 		"Hey folks. While you *calmly* wait for the stream's inevitable return, why not take the opportunity to catch up on some stuff you missed? https://vst.ninja/DB14/",
 	"missing":
@@ -86,7 +86,8 @@ MACROS = {
 }
 for word in {
 	'milestone', 'poster', 'video', 'videos', 'stats', 'graphs', 'youtube', 'clip', 'postermap',
-	'sheet', 'strike', 'missed', 'timeline', 'upload', 'uploaded', 'link', 'request', 'clip',
+	'sheet', 'strike', 'miss', 'missed', 'timeline', 'upload', 'uploaded', 'link', 'request', 'poster',
+	'yet', 'happen', 'happened',
 }:
 	KEYWORD_HIGHLIGHTS[word] = KICK_HIGHLIGHT
 
