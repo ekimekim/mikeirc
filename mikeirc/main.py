@@ -356,15 +356,9 @@ def generic_recv(editor, client, msg, sender=None):
 	elif msg.command == 'ROOMSTATE':
 		changes = ', '.join("{}={!r}".format(k, v) for k, v in msg.tags.items())
 		outstr = highlight("{empty:>{SENDER_WIDTH}} Room state change: {changes}", KICK_HIGHLIGHT)
-	elif msg.command == 'USERNOTICE' and msg.tags['msg-id'] == 'resub':
-		sender = msg.tags['login']
-		months = msg.tags['msg-param-months']
-		if len(msg.params) == 2:
-			chan, text = msg.params
-			suffix = ': {}'.format(text)
-		else:
-			suffix = ''
-		outstr = highlight("{sender:>{SENDER_WIDTH}} subscribed for {months} months{suffix}", PRIVATE_HIGHLIGHT)
+	elif msg.command == 'USERNOTICE':
+		system_msg = msg.tags.get('system-msg', "Bad USERNOTICE: {}".format(msg.tags))
+		outstr = highlight("{system_msg}", PRIVATE_HIGHLIGHT)
 	elif msg.command in ('PING', 'PONG', 'USERSTATE'):
 		return
 	else:
