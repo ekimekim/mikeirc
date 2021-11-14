@@ -50,6 +50,12 @@ USER_HIGHLIGHTS = {
 	'Voxlunch': '1',
 	'Tuxbeej': '1',
 	'andrew': '1',
+	'wiggins': '1',
+	'RayFK': '1',
+	'ThorSokar': '1',
+	'jacobburgessvo': '1',
+	'Mollylele': '1',
+	'Fugi': '1',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
@@ -87,7 +93,7 @@ MACROS = {
 for word in {
 	'milestone', 'poster', 'video', 'videos', 'stats', 'graphs', 'youtube', 'clip', 'postermap',
 	'sheet', 'strike', 'miss', 'missed', 'timeline', 'upload', 'uploaded', 'link', 'request', 'poster',
-	'yet', 'happen', 'happened',
+	'yet', 'happen', 'happened', 'vod', 'watch', 'rewatch', 'vods',
 }:
 	KEYWORD_HIGHLIGHTS[word] = KICK_HIGHLIGHT
 
@@ -144,7 +150,7 @@ def main():
 	if twitch:
 		nickserv_password = None
 	elif password:
-		nickserv_password = "{} {}".format(CONF.email, password) if CONF.email else password
+		nickserv_password = password
 		password = None
 	else:
 		nickserv_password = None
@@ -388,11 +394,10 @@ def out(editor, client, s):
 
 	# highlight nick
 	keywords = {}
-	keywords.update({user: USER_HIGHLIGHT for user in channel.users.users})
-	keywords.update({user: OP_HIGHLIGHT for user in channel.users.ops})
-	keywords.update({nick_normalize(client._nick): NICK_HIGHLIGHT})
-	keywords.update(KEYWORD_HIGHLIGHTS)
-	keywords = {k.lower(): v for k, v in keywords.items()}
+	keywords.update({user.lower(): USER_HIGHLIGHT for user in channel.users.users})
+	keywords.update({user.lower(): OP_HIGHLIGHT for user in channel.users.ops})
+	keywords.update({nick_normalize(client._nick).lower(): NICK_HIGHLIGHT})
+	keywords.update({k.lower(): v for k, v in KEYWORD_HIGHLIGHTS.items()})
 
 	outbuf = ''
 	buf = ''
