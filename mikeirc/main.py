@@ -21,6 +21,7 @@ from lineedit import LineEditing, complete_from
 from pyconfig import CONF
 
 import irccolors
+from pronouns import Pronouns
 
 
 COMMAND_HIGHLIGHT = "30"
@@ -160,6 +161,7 @@ def main():
 			backdoor = 1235
 		gtools.backdoor(backdoor)
 
+	pronouns = None
 	if twitch:
 		# make changes to host
 		if not isinstance(twitch, basestring):
@@ -180,6 +182,9 @@ def main():
 		# make channel owner bold
 		USER_HIGHLIGHTS[CONF.channel.lstrip('#').lower()] = '1'
 
+		pronouns = Pronouns()
+
+
 	client = None
 	backoff = Backoff(0.2, 10, 2)
 	while True:
@@ -192,7 +197,7 @@ def main():
 
 			editor = LineEditing(input_fn=read, completion=lambda prefix: complete_from(channel.users.users)(prefix.lower()), gevent_handle_sigint=True)
 
-			client.handler(lambda client, msg: generic_recv(editor, client, msg))
+			client.handler(lambda client, msg: generic_recv(editor, pronouns, client, msg))
 
 			client.start()
 			# spawn input greenlet in client's Group, linking its lifecycle to the client
@@ -240,7 +245,7 @@ def compose_re_any(regexes):
 		return '$^' # match nothing
 	return '|'.join('({})'.format(n) for n in regexes)
 
-def generic_recv(editor, client, msg, sender=None):
+def generic_recv(editor, pronouns, client, msg, sender=None):
 
 	params = msg.params
 	text = ' '.join(msg.params)
@@ -319,10 +324,23 @@ def generic_recv(editor, client, msg, sender=None):
 				text = text.encode('utf-8')
 
 		if target == CONF.channel:
+			colon = ":"
+			if pronouns is not None:
+				p = pronouns.get(sender)
+				h = {
+					'unknown': None,
+					None: '32',
+					'hehim': '34',
+					'hethey': '36',
+					'sheher': '31',
+					'shethey': '35',
+				}.get(p, '37')
+				if h:
+					colon = highlight(colon, h)
 			if is_action:
 				outstr = "{sender:>{SENDER_WIDTH}} {text}"
 			else:
-				outstr = "{sender:>{SENDER_WIDTH}}: {text}"
+				outstr = "{sender:>{SENDER_WIDTH}}{colon} {text}"
 			if sender.lower() in USER_HIGHLIGHTS:
 				outstr = highlight(outstr, USER_HIGHLIGHTS[sender.lower()])
 			for regex, hl in USER_REGEX_HIGHLIGHTS.items():
@@ -475,7 +493,7 @@ def in_worker(client, editor):
 							message = Message(client, cmd, *args)
 					if message:
 						message.send()
-						generic_recv(editor, client, message, sender=client.nick)
+						generic_recv(editor, None, client, message, sender=client.nick)
 		except EOFError:
 			client.quit("Exiting")
 
