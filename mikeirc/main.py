@@ -57,6 +57,8 @@ USER_HIGHLIGHTS = {
 	'jacobburgessvo': '1',
 	'Mollylele': '1',
 	'Fugi': '1',
+	'sharkfists': '1',
+	'EscherichiaCole': '1',
 }
 KEYWORD_HIGHLIGHTS = {
 	'ekim': NICK_HIGHLIGHT, # das me
