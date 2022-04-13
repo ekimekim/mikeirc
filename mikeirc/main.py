@@ -233,6 +233,10 @@ def compose_re_any(regexes):
 		return '$^' # match nothing
 	return '|'.join('({})'.format(n) for n in regexes)
 
+# using a global here is a hack but meh
+twitch_mods = set()
+twitch_seen = set()
+
 def generic_recv(editor, pronouns, client, msg, sender=None):
 
 	params = msg.params
@@ -243,6 +247,17 @@ def generic_recv(editor, pronouns, client, msg, sender=None):
 	empty = ''
 	ignore_nick_re = '^({})$'.format(compose_re_any(CONF.ignore_nicks))
 	soft_ignore_nick_re = '^({})$'.format(compose_re_any(CONF.soft_ignore_nicks))
+
+	# If on twitch, mark known mods and seen users
+	if msg.tags and 'mod' in msg.tags:
+		names = [msg.sender]
+		if 'display-name' in msg.tags:
+			names.append(msg.tags['display-name'])
+		twitch_seen.update(names)
+		if msg.tags['mod'] == '1':
+			twitch_mods.update(names)
+		else:
+			twitch_mods.difference_update(names)
 
 	# On twitch, sender is lowercased but display-name is correct, for ascii names.
 	# For eg. chinese names, the display name is the chinese characters and the sender is the ascii username.
@@ -401,7 +416,9 @@ def out(editor, client, s):
 	# highlight nick
 	keywords = {}
 	keywords.update({user.lower(): USER_HIGHLIGHT for user in channel.users.users})
+	keywords.update({user.lower(): USER_HIGHLIGHT for user in twitch_seen})
 	keywords.update({user.lower(): OP_HIGHLIGHT for user in channel.users.ops})
+	keywords.update({user.lower(): OP_HIGHLIGHT for user in twitch_mods})
 	keywords.update({nick_normalize(client._nick).lower(): NICK_HIGHLIGHT})
 	keywords.update({k.lower(): v for k, v in KEYWORD_HIGHLIGHTS.items()})
 
