@@ -165,21 +165,7 @@ def main():
 
 	pronouns = None
 	if twitch:
-		# make changes to host
-		if not isinstance(twitch, basestring):
-			print "Loading chat server for channel..."
-			resp = requests.get('http://tmi.twitch.tv/servers', params={'channel': CONF.channel.lstrip('#')})
-			resp.raise_for_status()
-			servers = resp.json()['servers']
-			server = random.choice(servers)
-			host, _ = server.split(':')
-			print "Using twitch server:", host
-		elif twitch == 'event':
-			host = random.choice(TWITCH_EVENT_SERVERS)
-			print 'Using twitch event server:', host
-		else:
-			host = twitch
-			print 'Using custom twitch server:', host
+		host = 'irc.chat.twitch.tv'
 
 		# make channel owner bold
 		USER_HIGHLIGHTS[CONF.channel.lstrip('#').lower()] = '1'
