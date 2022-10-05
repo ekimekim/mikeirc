@@ -72,27 +72,10 @@ USER_REGEX_HIGHLIGHTS = {
 
 EXCLUDE_NUMERICS = {5}
 
-# for VST
 MACROS = {
-	"videos":
-		"Missed any of DB2020 and want to catch up? The VST has you covered, with full event logs and youtube videos. Check it out! https://vst.ninja/DB14/",
-	"poster":
-		"Miss a poster update? Check out https://vst.ninja/DB14/posters/ to see the poster versions as it grows! Or check https://vst.ninja/DB14/postermap to see the clips that the poster references!",
-	"stats":
-		"Fun stats generated from the chat, for all your inner math nerd needs! https://vst.ninja/chatstats/",
-	"milestones":
-		"Want to see how close we are to various milestones? Check out https://vst.ninja/milestones/",
-	"gifs":
-		"Our Giffers work around the clock to make you say 'I remember that!' or 'Wait, when did that happen?'. Check out their efforts at http://greywool.com/desertbus/2020/gifs/",
-	"donor":
-		"Don't forget to sign up for a donor account at https://desertbus.org/donor/sign-up so you can win Giveaways with your donations! And link that twitch account so you can bid on Live Auctions!",
-	"vst":
-		"The VST, or Video Strike Team, is a group of people that catalog, capture, clip, and upload moments from desertbus to youtube. You can find our website at https://vst.ninja or our youtube page at https://www.youtube.com/DesertBusForHope",
-	"picnic":
-		"Hey folks. While you *calmly* wait for the stream's inevitable return, why not take the opportunity to catch up on some stuff you missed? https://vst.ninja/DB14/",
-	"missing":
-		"Have you been a DesertBus fan for a long time? Do you like to hoard things like video captures? See if you can help us complete our archive at http://vst.ninja/missingdata/",
 }
+
+# for VST
 for word in {
 	'milestone', 'poster', 'video', 'videos', 'stats', 'graphs', 'youtube', 'clip', 'postermap',
 	'sheet', 'strike', 'miss', 'missed', 'timeline', 'upload', 'uploaded', 'link', 'request', 'poster',
