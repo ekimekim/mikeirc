@@ -5,7 +5,7 @@ import logging
 import gevent
 import requests
 
-API = "https://pronouns.alejo.io/api/users/"
+API = "https://pronouns.alejo.io/api/users"
 
 class Pronouns(object):
 	def __init__(self, ttl=600, negative_ttl=300, sync=False):

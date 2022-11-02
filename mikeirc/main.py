@@ -368,7 +368,15 @@ def generic_recv(editor, pronouns, client, msg, sender=None):
 		outstr = highlight("{empty:>{SENDER_WIDTH}} Room state change: {changes}", KICK_HIGHLIGHT)
 	elif msg.command == 'USERNOTICE':
 		system_msg = msg.tags.get('system-msg', "Bad USERNOTICE: {}".format(msg.tags))
+		# this sucks but is good enough for now. USERNOTICEs have useful system messages,
+		# but sometimes also actual content in the params.
 		outstr = highlight("{system_msg}", PRIVATE_HIGHLIGHT)
+		logging.debug("TEST: {}, {}".format(len(params), "display-name" in msg.tags))
+		if len(params) > 1 and "display-name" in msg.tags:
+			text = params[1]
+			sender = msg.tags['display-name']
+			outstr += "\n{sender:>{SENDER_WIDTH}}: {text}"
+		logging.debug(outstr)
 	elif msg.command in ('PING', 'PONG', 'USERSTATE'):
 		return
 	else:
