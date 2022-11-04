@@ -32,6 +32,7 @@ USER_HIGHLIGHT = "32"
 OP_HIGHLIGHT = "33"
 TWITCH_EMOTE_HIGHLIGHT = "36"
 SOFT_IGNORE_HIGHLIGHT = "30"
+REPLY_HIGHLIGHT = "30"
 
 SENDER_WIDTH = 12
 USER_WIDTH = 12
@@ -309,6 +310,12 @@ def generic_recv(editor, pronouns, client, msg, sender=None):
 			if isinstance(text, unicode):
 				text = text.encode('utf-8')
 
+		prefix = ''
+		if CONF.twitch and msg.tags and msg.tags.get('reply-parent-msg-body'):
+			parent_body = msg.tags['reply-parent-msg-body']
+			gap = " " * SENDER_WIDTH
+			prefix = highlight("{gap}⮦ {parent_body}", REPLY_HIGHLIGHT) + "\n"
+
 		if target == CONF.channel:
 			colon = ":"
 			if pronouns is not None:
@@ -347,6 +354,8 @@ def generic_recv(editor, pronouns, client, msg, sender=None):
 				outstr = highlight("{sender:>{SENDER_WIDTH}} {text}", PRIVATE_HIGHLIGHT)
 			else:
 				outstr = highlight("{sender:>{SENDER_WIDTH}}: {text}", PRIVATE_HIGHLIGHT)
+
+		outstr = prefix + outstr
 	elif msg.command == 'QUIT':
 		outstr = highlight("{sender:>{SENDER_WIDTH}} quits: {text}", COMMAND_HIGHLIGHT)
 		if quiet or nousers: nosend = True
@@ -431,10 +440,11 @@ def out(editor, client, s):
 			if outbuf.endswith('\x1b['):
 				in_escape = True
 	outbuf = outbuf[:-1] # remove terminator
-	line = irccolors.apply_irc_formatting(outbuf)
-	global replay_history
-	replay_history = (replay_history + [line])[:REDRAW_LINES]
-	editor.write(line)
+	for line in outbuf.split('\n'):
+		line = irccolors.apply_irc_formatting(line)
+		global replay_history
+		replay_history = (replay_history + [line])[:REDRAW_LINES]
+		editor.write(line)
 
 
 def in_worker(client, editor):
