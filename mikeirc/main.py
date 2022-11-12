@@ -43,6 +43,7 @@ USER_HIGHLIGHTS = {
 	'bidbot': '1;33',
 	'twitchnotify': '33',
 	'andrew': '1',
+	'alexsteacy': '1',
 	'ashleyturnlrr': '1',
 	'ashton': '1',
 	'aubreycello': '1',
@@ -406,14 +407,21 @@ def generic_recv(editor, pronouns, client, msg, sender=None):
 		chan, target, text = params[0], params[1], ' '.join(params[2:])
 		outstr = highlight("{empty:>{SENDER_WIDTH}} {target} kicked by {sender}: {text}", KICK_HIGHLIGHT)
 	elif msg.command == 'CLEARCHAT':
-		chan, target = params
-		text = msg.tags.get('ban-reason', '<no message>')
-		duration = msg.tags.get('ban-duration')
-		dur_text = 'timed out for {}s'.format(duration) if duration is not None else 'banned'
-		outstr = highlight("{empty:>{SENDER_WIDTH}} {target} {dur_text}: {text}", KICK_HIGHLIGHT)
+		if len(params) == 2:
+			chan, target = params
+			text = msg.tags.get('ban-reason', '<no message>')
+			duration = msg.tags.get('ban-duration')
+			dur_text = 'timed out for {}s'.format(duration) if duration is not None else 'banned'
+			outstr = highlight("{empty:>{SENDER_WIDTH}} {target} {dur_text}: {text}", KICK_HIGHLIGHT)
+		else:
+			outstr = highlight("{empty:>{SENDER_WIDTH}} The room was cleared")
 	elif msg.command == 'ROOMSTATE':
 		changes = ', '.join("{}={!r}".format(k, v) for k, v in msg.tags.items())
 		outstr = highlight("{empty:>{SENDER_WIDTH}} Room state change: {changes}", KICK_HIGHLIGHT)
+	elif msg.command == 'USERNOTICE' and msg.tags.get('msg-id') == "announcement":
+		sender = msg.tags.get("display-name", "unknown")
+		content = msg.params[1]
+		outstr = highlight("sender:>{SENDER_WIDTH}}: {content}", "1")
 	elif msg.command == 'USERNOTICE':
 		system_msg = msg.tags.get('system-msg', "Bad USERNOTICE: {}".format(msg.tags))
 		# this sucks but is good enough for now. USERNOTICEs have useful system messages,
