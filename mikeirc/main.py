@@ -421,7 +421,7 @@ def generic_recv(editor, pronouns, client, msg, sender=None):
 	elif msg.command == 'USERNOTICE' and msg.tags.get('msg-id') == "announcement":
 		sender = msg.tags.get("display-name", "unknown")
 		content = msg.params[1]
-		outstr = highlight("sender:>{SENDER_WIDTH}}: {content}", "1")
+		outstr = highlight("{sender:>{SENDER_WIDTH}}: {content}", "1")
 	elif msg.command == 'USERNOTICE':
 		system_msg = msg.tags.get('system-msg', "Bad USERNOTICE: {}".format(msg.tags))
 		# this sucks but is good enough for now. USERNOTICEs have useful system messages,
