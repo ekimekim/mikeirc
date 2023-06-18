@@ -52,6 +52,7 @@ USER_HIGHLIGHTS = {
 	'billsmom1': '1',
 	'bravenewfaves': '1',
 	'carriefloyd': '1',
+	'childsplaycharity': '1',
 	'corianderd': '1',
 	'dalefriesen': '1',
 	'dammit_liz': '1',

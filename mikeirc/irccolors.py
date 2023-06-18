@@ -7,7 +7,7 @@ FORMAT_MAP = {
 	'\x02': '1', # bold
 	'\x1f': '4', # underline
 	'\x16': '7', # reverse fore/background
-	'\x1d': None, # italic - not supported
+	'\x1d': '3', # italic
 }
 
 # maps colors in color format specifiers to SGR colors 0-7
